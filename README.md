@@ -1,98 +1,68 @@
 ﻿# CLIDOWNROM
 
-![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)
-![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 
-Uma ferramenta de linha de comando (CLI) poderosa e autônoma para pesquisar e baixar ROMs de jogos utilizando o banco de dados do CrocDB.
+[Leia isto em Português / Read this in Portuguese](README.pt_br.md)
 
-## ✨ Funcionalidades
+---
 
-* **Interface Híbrida:** Funciona como um CLI padrão para automação e também como um Shell Interativo amigável para uso guiado.
-* **Autoinstalação:** Gerencia suas próprias dependências (Python e Git) de forma automática na primeira execução.
-* **Atualizações Automáticas:** Verifica e atualiza o banco de dados do CrocDB para manter as informações das ROMs sempre recentes.
-* **Múltiplas Fontes:** Busca ROMs tanto pela API online do CrocDB quanto por um banco de dados local para operações em lote mais rápidas.
-* **Teste Inteligente de Mirrors:** Testa a velocidade dos mirrors de download e prioriza o mais rápido para otimizar a velocidade de download.
-* **Gerenciador de Downloads Robusto:** Inclui barras de progresso, retentativas automáticas, validação de tamanho do arquivo e organização automática em pastas por plataforma.
-* **Logging Detalhado:** Registra todas as operações, sucessos, erros e crashes em arquivos de log para fácil depuração.
-* **Suporte a Múltiplos Idiomas:** A interface se adapta ao idioma do sistema (com suporte inicial para pt_br e en_us).
+A powerful and autonomous command-line tool (CLI) to search and download game ROMs using the CrocDB database.
 
-## 🚀 Instalação e Primeira Execução
+## ✨ Features
 
-A ferramenta foi projetada para ser o mais simples possível de instalar e usar.
+* **Hybrid Interface:** Works as a standard CLI for automation and also as a user-friendly Interactive Shell for guided use.
+* **Self-Installation:** Automatically manages its own dependencies (Python and Git) on the first run.
+* **Automatic Updates:** Checks and updates the CrocDB database to keep ROM information current.
+* **Multiple Sources:** Searches for ROMs via the online CrocDB API as well as a local database for faster batch operations.
+* **Intelligent Mirror Testing:** Tests the download speed of mirrors and prioritizes the fastest one to optimize download speed.
+* **Robust Download Manager:** Includes progress bars, automatic retries, file size validation, and automatic organization into platform folders.
+* **Detailed Logging:** Records all operations, successes, errors, and crashes in log files for easy debugging.
+* **Multi-Language Support:** The interface adapts to the system language (initial support for en_us and pt_br).
 
-**Pré-requisitos:**
-* [Python 3.8+](https://www.python.org/downloads/)
-* [Git](https://git-scm.com/downloads/)
+## 🚀 Installation and First Run
 
-Com os pré-requisitos instalados, siga os passos:
+The tool is designed to be as simple as possible to install and use.
 
-1.  **Obtenha o projeto:**
-    ```bash
+**Prerequisites:**
+
+* Python 3.8+ ([https://www.python.org/downloads/](https://www.python.org/downloads/))
+* Git ([https://git-scm.com/downloads/](https://git-scm.com/downloads/))
+
+With the prerequisites installed, follow these steps:
+
+1.  **Get the project:**
+    ````bash
     git clone [https://github.com/Oraculo-adm/CLIDOWNROM.git](https://github.com/Oraculo-adm/CLIDOWNROM.git)
     cd CLIDOWNROM
-    ```
+    ````
+2.  **Run the Launcher:**
+    Simply run the launcher script corresponding to your operating system.
 
-2.  **Execute o Launcher:**
-    Basta executar o script iniciador correspondente ao seu sistema operacional.
-
-    * **No Windows:**
-        ```bash
+    * **On Windows:**
+        ````bash
         start.bat
-        ```
-        (Você também pode dar um duplo-clique no arquivo `start.bat`)
-
-    * **No Linux ou macOS:**
-        ```bash
-        chmod +x start.sh  # Dá permissão de execução (só precisa na primeira vez)
+        ````
+        (You can also double-click the `start.bat` file)
+    * **On Linux or macOS:**
+        ````bash
+        chmod +x start.sh  # Give execute permission (only needed the first time)
         ./start.sh
-        ```
+        ````
 
-Na primeira vez que você executar, o script irá automaticamente criar um ambiente virtual, instalar as dependências do Python e baixar os bancos de dados necessários do CrocDB. Nas execuções seguintes, ele iniciará a aplicação instantaneamente.
+The first time you run it, the script will automatically create a virtual environment, install Python dependencies, and download the necessary CrocDB databases. Subsequent runs will start the application instantly.
 
-## ⚙️ Configuração
+## ⚙️ Configuration
 
-O comportamento da ferramenta pode ser ajustado através de dois arquivos principais na pasta `Cli-Download-Rom/`:
+The tool's behavior can be adjusted through two main files in the `Cli-Download-Rom/` folder:
 
-* **`config.yml`**: O arquivo de configuração principal. Aqui você pode habilitar/desabilitar o teste de mirrors, definir o número de retentativas de download, alterar os diretórios padrão e muito mais.
-* **`.env`**: Usado para credenciais. Copie o arquivo `.env.example` para `.env` e adicione seu usuário e senha do Internet Archive se precisar baixar arquivos restritos.
+* **`config.yml`**: The main configuration file. Here you can enable/disable mirror testing, set the number of download retries, change default directories, and more.
+* **`.env`**: Used for credentials. Copy the `.env.example` file to `.env` and add your Internet Archive username and password if you need to download restricted files.
 
 ## USAGE
 
-A ferramenta pode ser usada de duas maneiras:
+The tool can be used in two ways:
 
-### Modo Shell Interativo (Uso Guiado)
+### Interactive Shell Mode (Guided Use)
 
-Execute o launcher sem argumentos (`start.bat` ou `./start.sh`) para entrar no modo interativo.
-
-```
-Bem-vindo ao Shell Interativo. Digite 'help' para uma lista de comandos ou 'exit' para sair.
-Downloader> search "Super Mario World"
-Downloader> download-list list/meus_favoritos.json
-Downloader> exit
-```
-
-### Modo CLI Padrão (Automação e Scripts)
-
-Passe os comandos diretamente para o launcher. A ferramenta executará a tarefa e sairá.
-
-* **Buscar uma ROM usando a API:**
-    ```bash
-    start.bat search "Sonic The Hedgehog 2"
-    ```
-* **Baixar uma lista de ROMs:**
-    ```bash
-    start.bat download-list list/snes_collection.json
-    ```
-
-## 🙏 Agradecimentos e Dependências
-
-Esta ferramenta depende fundamentalmente do excelente trabalho da equipe do **CrocDB**. Os seguintes projetos são utilizados como dependências:
-
-* [**crocdb-db**](https://github.com/cavv-dev/crocdb-db) (Licença MIT)
-* [**crocdb-api**](https://github.com/cavv-dev/crocdb-api) (Licença MIT)
-
-Agradecemos por fornecerem um recurso tão valioso para a comunidade de preservação de jogos.
-
-## ⚖️ Licença
-
-Este projeto está licenciado sob os termos da Licença Creative Commons Atribuição-NãoComercial-CompartilhaIgual 4.0 Internacional. Veja o arquivo [LICENSE.md](LICENSE.md) para mais detalhes.
+Run the launcher without arguments (`start.bat` or `./start.sh`) to enter the interactive mode.
