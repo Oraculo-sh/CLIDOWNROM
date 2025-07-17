@@ -32,23 +32,23 @@ The tool is designed to be as simple as possible to install and use.
 With the prerequisites installed, follow these steps:
 
 1.  **Get the project:**
-    ````bash
+    ```bash
     git clone [https://github.com/Oraculo-adm/CLIDOWNROM.git](https://github.com/Oraculo-adm/CLIDOWNROM.git)
     cd CLIDOWNROM
-    ````
+    ```
 2.  **Run the Launcher:**
     Simply run the launcher script corresponding to your operating system.
 
     * **On Windows:**
-        ````bash
+        ```bash
         start.bat
-        ````
+        ```
         (You can also double-click the `start.bat` file)
     * **On Linux or macOS:**
-        ````bash
+        ```bash
         chmod +x start.sh  # Give execute permission (only needed the first time)
         ./start.sh
-        ````
+        ```
 
 The first time you run it, the script will automatically create a virtual environment, install Python dependencies, and download the necessary CrocDB databases. Subsequent runs will start the application instantly.
 
@@ -66,3 +66,34 @@ The tool can be used in two ways:
 ### Interactive Shell Mode (Guided Use)
 
 Run the launcher without arguments (`start.bat` or `./start.sh`) to enter the interactive mode.
+
+Welcome to the Interactive Shell. Type 'help' for a list of commands or 'exit' to quit.
+Downloader> search "Super Mario World"
+Downloader> download-list list/my_favorites.json
+Downloader> exit
+
+### Standard CLI Mode (Automation and Scripts)
+
+Pass commands directly to the launcher. The tool will execute the task and exit.
+
+* **Search for a ROM using the API:**
+    ```bash
+    start.bat search "Sonic The Hedgehog 2"
+    ```
+* **Download a list of ROMs:**
+    ```bash
+    start.bat download-list list/snes_collection.json
+    ```
+
+## 🙏 Acknowledgements and Dependencies
+
+This tool fundamentally relies on the excellent work of the **CrocDB** team. The following projects are used as dependencies:
+
+* **crocdb-db** ([https://github.com/cavv-dev/crocdb-db](https://github.com/cavv-dev/crocdb-db)) (GNU General Public License v3.0)
+* **crocdb-api** ([https://github.com/cavv-dev/crocdb-api](https://github.com/cavv-dev/crocdb-api)) (GNU General Public License v3.0)
+
+We thank them for providing such a valuable resource to the game preservation community.
+
+## ⚖️ License
+
+This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. See the [LICENSE.md](LICENSE.md) file for more details.
