@@ -83,3 +83,9 @@ COMMANDS_HELP = "Comandos disponíveis"
 # Interactive Shell
 INTERACTIVE_SHELL_WELCOME = "Bem-vindo ao Shell Interativo. Digite 'help' para uma lista de comandos ou 'exit' para sair."
 INTERACTIVE_SHELL_EXIT = "Saindo do shell. Até logo!"
+
+# Update Checker
+UPDATE_CHECKING_TOOL = "Verificando atualizações da ferramenta..."
+UPDATE_TOOL_AVAILABLE = "Uma nova versão da ferramenta está disponível! Recomenda-se executar 'git pull' para atualizar."
+UPDATE_CHECKING_CROCDB = "Verificando atualizações do banco de dados CrocDB..."
+UPDATE_CROCDB_SUCCESS = "O banco de dados '{}' foi atualizado com novas informações."
