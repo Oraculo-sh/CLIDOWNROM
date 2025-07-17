@@ -74,4 +74,12 @@ FINAL_REPORT_SUCCESS = "Concluídos com sucesso: {}"
 FINAL_REPORT_FAILURE = "Falhas: {} (verifique error.log para detalhes)"
 FINAL_REPORT_LOGS = "Logs salvos em: {}"
 LIST_PROCESSING_ROM = "Processando '{}'..."
-FINAL_REPORT_SINGLE_DOWNLOAD = "Operação de download único concluída."
+FINAL_REPORT_SINGLE_DOWNLOAD = "Operação de download único concluída."3
+
+# App Description
+APP_DESCRIPTION = "Ferramenta de linha de comando para download de ROMs via CrocDB."
+COMMANDS_HELP = "Comandos disponíveis"
+
+# Interactive Shell
+INTERACTIVE_SHELL_WELCOME = "Bem-vindo ao Shell Interativo. Digite 'help' para uma lista de comandos ou 'exit' para sair."
+INTERACTIVE_SHELL_EXIT = "Saindo do shell. Até logo!"
