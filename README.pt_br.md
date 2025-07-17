@@ -89,8 +89,8 @@ Passe os comandos diretamente para o launcher. A ferramenta executará a tarefa 
 
 Esta ferramenta depende fundamentalmente do excelente trabalho da equipe do **CrocDB**. Os seguintes projetos são utilizados como dependências:
 
-* **crocdb-db** ([https://github.com/cavv-dev/crocdb-db](https://github.com/cavv-dev/crocdb-db)) (Licença MIT)
-* **crocdb-api** ([https://github.com/cavv-dev/crocdb-api](https://github.com/cavv-dev/crocdb-api)) (Licença MIT)
+* **crocdb-db** ([https://github.com/cavv-dev/crocdb-db](https://github.com/cavv-dev/crocdb-db)) (GNU General Public License v3.0)
+* **crocdb-api** ([https://github.com/cavv-dev/crocdb-api](https://github.com/cavv-dev/crocdb-api)) (GNU General Public License v3.0)
 
 Agradecemos por fornecerem um recurso tão valioso para a comunidade de preservação de jogos.
 
