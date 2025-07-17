@@ -1,0 +1,77 @@
+﻿# Mensagens Gerais
+DIR_STRUCTURE_CHECK = "⌁ Verificando estrutura de diretórios..."
+DIR_CREATED = "  → Criando diretório: {}"
+DIR_STRUCTURE_SUCCESS = "✔️ Estrutura de diretórios verificada com sucesso."
+
+# Mensagens da CLI
+SEARCH_START = "🔎  Iniciando busca por '{}' usando a fonte '{}'..."
+DOWNLOAD_LIST_START = "📚 Iniciando download da lista em '{}'..."
+
+# Logging Messages
+LOGGING_SYSTEM_SETUP = "Sistema de logging configurado."
+
+# CrocDB API Handler Messages
+API_SEARCH_ATTEMPT = "Tentando buscar por '{}' na API: {}"
+API_SEARCH_NO_RESULTS = "Nenhum resultado encontrado na API para '{}'."
+API_SEARCH_SUCCESS = "Busca na API bem-sucedida: {} resultados para '{}'."
+API_DETAILS_ATTEMPT = "Tentando obter detalhes do rom_id '{}' da API: {}"
+API_DETAILS_SUCCESS = "Detalhes da ROM '{}' obtidos com sucesso."
+API_HTTP_ERROR = "Erro HTTP ao acessar a URL '{}'. Código de status: {}"
+API_REQUEST_ERROR = "Erro de conexão ao acessar a URL '{}'. Detalhes: {}"
+API_UNEXPECTED_ERROR = "Erro inesperado na função '{}': {}"
+
+SEARCH_FAILED = "A busca falhou. Verifique os logs para mais detalhes."
+SEARCH_NO_RESULTS_FOUND = "Nenhum resultado encontrado para '{}'."
+SEARCH_RESULTS_TITLE = "Resultados da busca:"
+PROMPT_SELECT_ROM = "Digite o número da ROM para baixar (ou pressione Enter para cancelar)"
+ACTION_CANCELLED = "Ação cancelada."
+ROM_SELECTED_FOR_DOWNLOAD = "ROM '{}' selecionada para download."
+ERROR_INVALID_SELECTION = "Seleção inválida. Por favor, escolha um número da lista."
+ERROR_INVALID_NUMBER = "Entrada inválida. Por favor, digite um número."
+LOCAL_SEARCH_NOT_IMPLEMENTED = "A busca local ainda não foi implementada."
+
+# CrocDB Local DB Handler Messages
+LOCAL_DB_DIR_NOT_FOUND = "Diretório do banco de dados local não encontrado em: {}"
+LOCAL_DB_NO_FILES = "Nenhum arquivo .json encontrado no diretório do banco de dados: {}"
+LOCAL_DB_SEARCH_START = "Iniciando busca local por '{}' (isso pode demorar)..."
+LOCAL_DB_FILE_PROCESSING = "Processando arquivo de banco de dados: {}"
+LOCAL_DB_FILE_ERROR = "Erro ao ler ou processar o arquivo de banco de dados '{}': {}"
+LOCAL_DB_SEARCH_COMPLETE = "Busca local concluída: {} resultados para '{}'."
+LOCAL_DB_DETAILS_ATTEMPT = "Buscando detalhes para o rom_id '{}' no banco de dados local."
+LOCAL_DB_DETAILS_SUCCESS = "Detalhes da ROM '{}' encontrados no banco de dados local."
+LOCAL_DB_ROM_NOT_FOUND = "A ROM com id '{}' não foi encontrada no banco de dados local."
+
+# List processing messages
+PROCESSING_LIST_FILE = "Processando arquivo de lista: {}"
+LIST_FILE_NOT_FOUND = "Arquivo de lista não encontrado: {}"
+LIST_FILE_INVALID = "Arquivo de lista inválido ou mal formatado: {}"
+LIST_PROCESSING_COMPLETE = "Processamento da lista concluído. {} de {} ROMs encontradas e prontas para download."
+FALLBACK_TO_API = "Não encontrada localmente. Recorrendo à API para a ROM id: {}"
+ROM_NOT_FOUND_ANYWHERE = "ERRO: A ROM com id '{}' não foi encontrada localmente nem na API."
+
+# Mirror Tester
+MIRROR_TEST_STARTING = "Iniciando teste de velocidade dos mirrors..."
+MIRROR_TEST_NO_LINKS = "Nenhum link fornecido para o teste de mirror."
+MIRROR_TEST_DOWNLOADING = "  - Testando download de {}..."
+MIRROR_TEST_PROGRESS_DESC = "Teste {}"
+MIRROR_TEST_HOST_SUCCESS = "Teste do host '{}' concluído em {} com velocidade de {}."
+MIRROR_TEST_HOST_FAILED = "Falha no teste do host '{}': {}"
+MIRROR_TEST_ALL_FAILED = "Todos os mirrors de teste falharam. Usando o mirror padrão."
+MIRROR_TEST_CONCLUSION = "Teste concluído. O mirror mais rápido é '{}' com {}."
+
+# Download Manager
+DOWNLOAD_ALREADY_EXISTS = "ROM '{}' já existe no diretório de destino e está validada. Pulando."
+DOWNLOAD_ATTEMPTING = "Baixando '{}' do mirror: {}"
+DOWNLOAD_PROGRESS_DESC = "Baixando {}"
+DOWNLOAD_SUCCESS = "Download da ROM '{}' bem-sucedido."
+DOWNLOAD_SIZE_MISMATCH = "Erro de validação para '{}'. Tamanho esperado: {}, baixado: {}."
+DOWNLOAD_HOST_ERROR = "Erro de conexão com o host '{}': {}"
+DOWNLOAD_ALL_MIRRORS_FAILED = "Falha no download de '{}' após tentar todos os mirrors e retentativas."
+MOVE_STARTING = "Movendo '{}' para o diretório final..."
+MOVE_SUCCESS = "Movido com sucesso para: {}"
+
+FINAL_REPORT_SUCCESS = "Concluídos com sucesso: {}"
+FINAL_REPORT_FAILURE = "Falhas: {} (verifique error.log para detalhes)"
+FINAL_REPORT_LOGS = "Logs salvos em: {}"
+LIST_PROCESSING_ROM = "Processando '{}'..."
+FINAL_REPORT_SINGLE_DOWNLOAD = "Operação de download único concluída."

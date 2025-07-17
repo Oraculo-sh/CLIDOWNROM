@@ -1,0 +1,6 @@
+requests
+tqdm
+PyYAML
+python-dotenv
+unidecode
+colorama

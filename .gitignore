@@ -1,0 +1,39 @@
+# Arquivos de ambiente
+.env
+
+# Dependências e cache do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.eggs/
+.egg-info/
+*.egg
+dist/
+build/
+htmlcov/
+.tox/
+.nox/
+.coverage
+.cache
+.pytest_cache/
+.hypothesis/
+
+# Arquivos gerados pela ferramenta
+/Cli-Download-Rom/logs/
+/Cli-Download-Rom/temp/
+/Cli-Download-Rom/ROMs/
+/Cli-Download-Rom/database/
+/Cli-Download-Rom/crocdb/crocdb-db/db/
+!/Cli-Download-Rom/crocdb/crocdb-db/db/.gitkeep
+
+# Arquivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
