@@ -38,4 +38,8 @@ echo.
 :: Executa o script Python principal, passando todos os argumentos do batch
 python "%MAIN_SCRIPT%" %*
 
+:: --- ADICIONADO ---
+:: Mantém a janela aberta para que você possa ver a saída ou erros
+pause
+
 endlocal
