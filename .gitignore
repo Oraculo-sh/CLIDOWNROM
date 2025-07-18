@@ -29,11 +29,4 @@ htmlcov/
 /Cli-Download-Rom/temp/
 /Cli-Download-Rom/ROMs/
 /Cli-Download-Rom/database/
-/Cli-Download-Rom/crocdb/crocdb-db/db/
-!/Cli-Download-Rom/crocdb/crocdb-db/db/.gitkeep
-
-# Arquivos de IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+/Cli-Download-Rom/crocdb/
