@@ -89,3 +89,4 @@ PROMPT_INSUFFICIENT_SPACE = "Free up space and press (R) to retry, or (C) to can
 SUCCESS_SPACE_FREED = "Sufficient space detected. Resuming..."
 DOWNLOAD_CANCELLED_BY_USER_NO_SPACE = "Download of '{}' cancelled by user due to lack of space."
 RECHECKING_SPACE = "Re-checking space..."
+UNHANDLED_EXCEPTION = "Unhandled exception caught!"

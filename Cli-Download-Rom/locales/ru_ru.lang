@@ -89,3 +89,4 @@ PROMPT_INSUFFICIENT_SPACE = "Освободите место и нажмите (
 SUCCESS_SPACE_FREED = "Обнаружено достаточно места. Возобновление..."
 DOWNLOAD_CANCELLED_BY_USER_NO_SPACE = "Загрузка '{}' отменена пользователем из-за нехватки места."
 RECHECKING_SPACE = "Повторная проверка свободного места..."
+UNHANDLED_EXCEPTION = "Обнаружено необработанное исключение!"
