@@ -6,8 +6,8 @@ import shutil
 import time
 from pathlib import Path
 from tqdm import tqdm
-from utils.localization import t
-from utils.config_loader import config
+from ..utils.localization import t
+from ..utils.config_loader import config
 
 success_logger = logging.getLogger('success_logger')
 

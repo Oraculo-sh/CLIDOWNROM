@@ -5,8 +5,8 @@ import time
 import requests
 from pathlib import Path
 from tqdm import tqdm
-from utils.localization import t
-from utils.config_loader import config
+from ..utils.localization import t
+from ..utils.config_loader import config
 
 def find_fastest_mirror(test_rom_details):
     """
