@@ -3,8 +3,8 @@
 import logging
 import subprocess
 from pathlib import Path
-from utils.localization import t
-from utils.config_loader import config
+from ..utils.localization import t
+from ..utils.config_loader import config
 
 def _run_git_command(command, cwd):
     """Executa um comando Git no diretório especificado e retorna o resultado."""

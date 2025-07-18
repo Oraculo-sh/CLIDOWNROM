@@ -7,12 +7,12 @@ import sys
 import cmd
 import shlex
 from pathlib import Path
-from utils.localization import t
-from utils.config_loader import config
-from scripts.crocdb_api_handler import CrocDBAPIHandler
-from scripts.crocdb_db_handler import CrocDBLocalHandler
-from scripts.mirror_tester import find_fastest_mirror
-from scripts.download_manager import download_rom
+from .utils.localization import t
+from .utils.config_loader import config
+from .scripts.crocdb_api_handler import CrocDBAPIHandler
+from .scripts.crocdb_db_handler import CrocDBLocalHandler
+from .scripts.mirror_tester import find_fastest_mirror
+from .scripts.download_manager import download_rom
 
 def _handle_rom_selection(results):
     print(f"\n✔️ {t.get_string('SEARCH_RESULTS_TITLE')}")
