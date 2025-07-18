@@ -31,7 +31,7 @@ def _handle_rom_selection(results):
                 logging.info(f"Usuário selecionou a ROM: {selected_rom_summary['title']} ({selected_rom_summary['rom_id']})")
                 print(f"\n{t.get_string('ROM_SELECTED_FOR_DOWNLOAD', selected_rom_summary['title'])}")
                 api_handler = CrocDBAPIHandler()
-                return api_handler.get_rom_details(selected_rom_summary['rom_id'])
+                return api_handler.get_rom_details(selected_rom_summary['slug'])
             else:
                 print(t.get_string("ERROR_INVALID_SELECTION"))
         except (ValueError, IndexError):
