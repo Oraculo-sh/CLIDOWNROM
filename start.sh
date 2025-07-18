@@ -1,13 +1,11 @@
 #!/bin/bash
 
-# Define o nome da pasta do ambiente virtual
 VENV_DIR="venv"
-MAIN_SCRIPT="Cli-Download-Rom/__main__.py"
 REQUIREMENTS_FILE="Cli-Download-Rom/requirements.txt"
+MODULE_NAME="Cli-Download-Rom"
 
 echo "Verificando ambiente Python..."
 
-# Verifica se a pasta do ambiente virtual existe
 if [ ! -d "$VENV_DIR" ]; then
     echo "Criando ambiente virtual... Isso pode levar um momento."
     python3 -m venv "$VENV_DIR"
@@ -17,7 +15,6 @@ if [ ! -d "$VENV_DIR" ]; then
     fi
 fi
 
-# Ativa o ambiente virtual
 source "$VENV_DIR/bin/activate"
 
 echo "Verificando e instalando dependências..."
@@ -30,5 +27,6 @@ fi
 echo "Iniciando a aplicação..."
 echo ""
 
-# Executa o script Python principal, passando todos os argumentos do shell
-python3 "$MAIN_SCRIPT" "$@"
+# --- MUDANÇA PRINCIPAL AQUI ---
+# Executa o script como um MÓDULO.
+python3 -m "$MODULE_NAME" "$@"

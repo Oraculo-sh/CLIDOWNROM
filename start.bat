@@ -4,13 +4,13 @@ setlocal
 :: Define o nome da pasta do ambiente virtual
 set VENV_DIR=venv
 
-:: Define o caminho para o script principal
-set MAIN_SCRIPT=Cli-Download-Rom\__main__.py
+:: Define os caminhos e o nome do módulo
 set REQUIREMENTS_FILE=Cli-Download-Rom\requirements.txt
+set MODULE_NAME=Cli-Download-Rom
 
 echo Verificando ambiente Python...
 
-:: Verifica se a pasta do ambiente virtual existe
+:: (O resto do script de verificação e instalação continua o mesmo)
 if not exist "%VENV_DIR%\" (
     echo Criando ambiente virtual... Isso pode levar um momento.
     python -m venv "%VENV_DIR%"
@@ -21,7 +21,6 @@ if not exist "%VENV_DIR%\" (
     )
 )
 
-:: Ativa o ambiente virtual
 call "%VENV_DIR%\Scripts\activate.bat"
 
 echo Verificando e instalando dependencias...
@@ -35,11 +34,9 @@ if %errorlevel% neq 0 (
 echo Iniciando a aplicacao...
 echo.
 
-:: Executa o script Python principal, passando todos os argumentos do batch
-python "%MAIN_SCRIPT%" %*
+:: --- MUDANÇA PRINCIPAL AQUI ---
+:: Executa o script como um MÓDULO, que é a forma correta.
+python -m %MODULE_NAME% %*
 
-:: --- ADICIONADO ---
-:: Mantém a janela aberta para que você possa ver a saída ou erros
 pause
-
 endlocal
