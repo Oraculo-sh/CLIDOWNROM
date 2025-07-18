@@ -15,7 +15,6 @@ updates:
   tool_repository_url: "https://github.com/user/repo" # URL do repositório do CLI para atualizações
   check_crocdb_update_on_startup: true # Verifica atualizações do CrocDB no início
   crocdb-db_repository_url: "https://github.com/cavv-dev/crocdb-db"  # URL do repositório do CrocDB-db
-  crocdb-api_repository_url: "https://github.com/cavv-dev/crocdb-api" # URL do repositório do CrocDB-api
 
 # Configurações da API CrocDB
 api:

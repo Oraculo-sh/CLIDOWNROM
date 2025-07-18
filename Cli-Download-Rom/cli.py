@@ -167,3 +167,75 @@ def start():
                 handle_download_list(args)
     else:
         InteractiveShell(parser).cmdloop()
+# Dentro de cli.py, adicione esta nova função de handler
+import subprocess
+import os
+
+def handle_update_db(args):
+    """
+    Executa o workflow completo do crocdb-db para construir/atualizar
+    o banco de dados SQLite local.
+    """
+    print(t.get_string("DB_UPDATE_STARTING"))
+    logging.info("Iniciando o processo de atualização do banco de dados local.")
+
+    crocdb_dir = Path(__file__).parent / 'crocdb' / 'crocdb-db'
+    workflow_script = crocdb_dir / 'workflow.py'
+
+    if not workflow_script.exists():
+        logging.error(t.get_string("DB_UPDATE_WORKFLOW_NOT_FOUND", str(workflow_script)))
+        print(f"❌ {t.get_string('DB_UPDATE_WORKFLOW_NOT_FOUND', str(workflow_script))}")
+        return
+
+    # O script workflow.py precisa ser executado de dentro do seu próprio diretório
+    # Usamos subprocess.run para chamar o Python do nosso ambiente virtual
+    venv_python = Path(sys.executable)
+    try:
+        # cwd muda o diretório de trabalho para o do script, garantindo que ele encontre seus próprios arquivos
+        result = subprocess.run(
+            [str(venv_python), str(workflow_script)],
+            cwd=str(crocdb_dir),
+            capture_output=True,
+            text=True,
+            encoding='utf-8'
+        )
+        if result.returncode == 0:
+            print(f"✔️ {t.get_string('DB_UPDATE_SUCCESS')}")
+            logging.info(f"Workflow do crocdb-db concluído com sucesso.\n{result.stdout}")
+        else:
+            print(f"❌ {t.get_string('DB_UPDATE_FAILED')}")
+            logging.error(f"O script workflow.py falhou.\nExit Code: {result.returncode}\n--- STDOUT ---\n{result.stdout}\n--- STDERR ---\n{result.stderr}")
+
+    except Exception as e:
+        print(f"❌ {t.get_string('DB_UPDATE_FAILED')}")
+        logging.error(f"Ocorreu um erro inesperado ao executar o workflow.py: {e}")
+
+# Dentro da função get_parser() em cli.py, adicione o novo subparser
+def get_parser():
+    # ... (código do parser existente)
+    
+    # Comando 'update-db' (NOVO)
+    parser_update = subparsers.add_parser('update-db', help='Baixa as fontes de dados e constrói/atualiza o banco de dados SQLite local.')
+    
+    return parser
+
+# Na classe InteractiveShell, adicione o novo comando
+class InteractiveShell(cmd.Cmd):
+    # ... (outros comandos)
+    def do_update_db(self, arg_string):
+        """Baixa as fontes e constrói/atualiza o banco de dados SQLite local."""
+        args = self.parser.parse_args(['update-db'] + shlex.split(arg_string))
+        handle_update_db(args)
+
+# Na função start(), adicione o novo comando no if/elif
+def start():
+    # ...
+    if len(sys.argv) > 1:
+        # ...
+        if args.command == 'search':
+            handle_search(args)
+        elif args.command == 'download-list':
+            handle_download_list(args)
+        elif args.command == 'update-db': # <-- ADICIONAR
+            handle_update_db(args)
+    # ...

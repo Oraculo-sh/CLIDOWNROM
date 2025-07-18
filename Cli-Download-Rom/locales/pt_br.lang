@@ -31,6 +31,12 @@ LOCAL_DB_FILE_PROCESSING = "Processando arquivo de banco de dados: {}"
 LOCAL_DB_SEARCH_COMPLETE = "Busca local concluída: {} resultados para '{}'."
 LOCAL_DB_DETAILS_ATTEMPT = "Buscando detalhes para o rom_id '{}' no banco de dados local."
 LOCAL_DB_DETAILS_SUCCESS = "Detalhes da ROM '{}' encontrados no banco de dados local."
+DB_UPDATE_STARTING = "Iniciando a construção/atualização do banco de dados local. Isso pode levar MUITO tempo..."
+DB_UPDATE_WORKFLOW_NOT_FOUND = "ERRO: Script 'workflow.py' não encontrado em {}."
+DB_UPDATE_SUCCESS = "Banco de dados local construído/atualizado com sucesso!"
+DB_UPDATE_FAILED = "A atualização do banco de dados local falhou. Verifique os logs para detalhes."
+LOCAL_DB_SQLITE_NOT_FOUND = "Arquivo de banco de dados SQLite não encontrado em: {}"
+LOCAL_DB_SQLITE_NOT_FOUND_USER_MSG = "Banco de dados local não encontrado. Execute o comando 'update-db' primeiro."
 
 # === Processamento de Arquivo de Lista ===
 PROCESSING_LIST_FILE = "Processando arquivo de lista: {}"

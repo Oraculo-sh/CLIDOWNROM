@@ -60,7 +60,7 @@ def check_for_crocdb_updates():
     print(f"ℹ️ {t.get_string('UPDATE_CHECKING_CROCDB')}")
     
     crocdb_base_path = Path(__file__).parent.parent / 'crocdb'
-    repos_to_update = ['crocdb-db', 'crocdb-api']
+    repos_to_update = ['crocdb-db']
 
     for repo_name in repos_to_update:
         repo_path = crocdb_base_path / repo_name

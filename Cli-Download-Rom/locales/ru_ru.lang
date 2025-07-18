@@ -31,6 +31,12 @@ LOCAL_DB_FILE_PROCESSING = "Обработка файла базы данных:
 LOCAL_DB_SEARCH_COMPLETE = "Локальный поиск завершен: {} результатов для '{}'."
 LOCAL_DB_DETAILS_ATTEMPT = "Получение деталей для rom_id '{}' из локальной базы данных."
 LOCAL_DB_DETAILS_SUCCESS = "Детали для ROM '{}' найдены в локальной базе данных."
+DB_UPDATE_STARTING = "Starting local database build/update. This may take a VERY long time..."
+DB_UPDATE_WORKFLOW_NOT_FOUND = "ERROR: 'workflow.py' script not found at {}."
+DB_UPDATE_SUCCESS = "Local database successfully built/updated!"
+DB_UPDATE_FAILED = "Local database update failed. Check logs for details."
+LOCAL_DB_SQLITE_NOT_FOUND = "SQLite database file not found at: {}"
+LOCAL_DB_SQLITE_NOT_FOUND_USER_MSG = "Local database not found. Run the 'update-db' command first."
 
 # === Обработка Файла Списка ===
 PROCESSING_LIST_FILE = "Обработка файла списка: {}"

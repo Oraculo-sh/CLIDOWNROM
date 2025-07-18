@@ -28,8 +28,7 @@ def check_and_clone_dependencies():
 
     crocdb_base_path = Path(__file__).parent.parent / 'crocdb'
     repos_to_check = {
-        'crocdb-db': config['updates']['crocdb-db_repository_url'],
-        'crocdb-api': config['updates']['crocdb-api_repository_url']
+        'crocdb-db': config['updates']['crocdb-db_repository_url']
     }
 
     for repo_name, repo_url in repos_to_check.items():
