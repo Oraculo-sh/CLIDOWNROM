@@ -1,29 +1,65 @@
+# Cli-Download-Rom/utils/dependency_checker.py (VERSÃO COM AUTO-INSTALL DO ARIA2C)
+
 import logging
 import subprocess
 import sys
 import shutil
+import requests
+import zipfile
+import io
 from pathlib import Path
 from ..utils.localization import t
 from ..utils.config_loader import config
 
 def _is_command_installed(command):
-    """Verifica se um comando existe no PATH do sistema."""
+    """Verifica se um comando existe no PATH do sistema ou em nossa pasta bin local."""
+    local_bin_path = Path(__file__).parent.parent / 'bin'
+    # Prioriza a versão local se existir
+    if (local_bin_path / f"{command}.exe").exists():
+        return True
     return shutil.which(command) is not None
 
-def check_system_dependencies():
-    """Verifica se todas as dependências de linha de comando (Git, aria2c) estão instaladas."""
-    dependencies = {'git': 'ERROR_GIT_NOT_FOUND', 'aria2c': 'ERROR_ARIA2C_NOT_FOUND'}
-    all_found = True
+def _download_and_install_aria2c():
+    """Baixa e extrai o aria2c para uma pasta bin local."""
+    print(f"ℹ️ {t.get_string('ARIA2C_AUTOINSTALL_START')}")
+    # URL para a última versão estável do aria2c para Windows 64-bit
+    # Idealmente, isso poderia ser mais dinâmico, mas para nosso caso é suficiente.
+    ARIA2C_URL = "https://github.com/aria2/aria2/releases/download/release-1.37.0/aria2-1.37.0-win-64bit-build1.zip"
     
-    for cmd, error_key in dependencies.items():
-        if not _is_command_installed(cmd):
-            print(f"❌ {t.get_string(error_key)}")
-            logging.error(f"{cmd} não foi encontrado no PATH do sistema.")
-            all_found = False
+    bin_dir = Path(__file__).parent.parent / 'bin'
+    bin_dir.mkdir(exist_ok=True)
+    
+    try:
+        response = requests.get(ARIA2C_URL, stream=True)
+        response.raise_for_status()
+        
+        # Extrai o conteúdo do ZIP em memória
+        with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
+            # Encontra o executável dentro do ZIP
+            for member in zf.infolist():
+                if member.filename.endswith('aria2c.exe'):
+                    # Extrai apenas o executável para nossa pasta bin
+                    with zf.open(member) as source, open(bin_dir / 'aria2c.exe', 'wb') as target:
+                        shutil.copyfileobj(source, target)
+                    print(f"✔️ {t.get_string('ARIA2C_AUTOINSTALL_SUCCESS')}")
+                    return True
+        raise FileNotFoundError("aria2c.exe not found in the downloaded archive.")
+        
+    except Exception as e:
+        logging.error(f"Falha no download automático do aria2c: {e}")
+        print(f"❌ {t.get_string('ARIA2C_AUTOINSTALL_FAILED')}")
+        return False
 
-    if not all_found:
-        print(f"   {t.get_string('ERROR_DEPS_NOT_FOUND_INSTRUCTIONS')}")
+def check_system_dependencies():
+    """Verifica se todas as dependências de sistema estão disponíveis ou as instala."""
+    if not _is_command_installed('git'):
+        print(f"❌ {t.get_string('ERROR_GIT_NOT_FOUND')}")
+        print(f"   {t.get_string('ERROR_GIT_NOT_FOUND_INSTRUCTIONS')}")
         sys.exit(1)
+
+    if not _is_command_installed('aria2c'):
+        if not _download_and_install_aria2c():
+            sys.exit(1)
 
 def check_and_clone_dependencies():
     """Verifica e clona o repositório do CrocDB se necessário."""
