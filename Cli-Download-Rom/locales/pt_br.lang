@@ -89,3 +89,10 @@ UPDATE_CHECKING_TOOL = "Verificando atualizações da ferramenta..."
 UPDATE_TOOL_AVAILABLE = "Uma nova versão da ferramenta está disponível! Recomenda-se executar 'git pull' para atualizar."
 UPDATE_CHECKING_CROCDB = "Verificando atualizações do banco de dados CrocDB..."
 UPDATE_CROCDB_SUCCESS = "O banco de dados '{}' foi atualizado com novas informações."
+
+# Interactive Error Handling
+ERROR_INSUFFICIENT_SPACE = "Espaço em disco insuficiente. Necessário: {}, Disponível: {}"
+PROMPT_INSUFFICIENT_SPACE = "Libere espaço e pressione (R) para tentar novamente, ou (C) para cancelar o download desta ROM: "
+SUCCESS_SPACE_FREED = "Espaço suficiente detectado. Retomando..."
+ERROR_INVALID_CHOICE = "Opção inválida."
+DOWNLOAD_CANCELLED_BY_USER_NO_SPACE = "Download de '{}' cancelado pelo usuário devido à falta de espaço."
