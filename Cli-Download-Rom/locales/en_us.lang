@@ -1,55 +1,44 @@
-﻿# General Messages
+﻿# === General & Setup ===
+APP_DESCRIPTION = "Command-line tool to download ROMs via CrocDB."
+LOGGING_SYSTEM_SETUP = "Logging system configured."
 DIR_STRUCTURE_CHECK = "⌁ Verifying directory structure..."
 DIR_CREATED = "  → Creating directory: {}"
 DIR_STRUCTURE_SUCCESS = "✔️ Directory structure checked successfully."
 
-# CLI Messages
+# === CLI & Interactive Shell ===
+COMMANDS_HELP = "Available commands"
+INTERACTIVE_SHELL_WELCOME = "Welcome to the Interactive Shell. Type 'help' for a list of commands or 'exit' to quit."
+INTERACTIVE_SHELL_EXIT = "Exiting shell. Goodbye!"
 SEARCH_START = "🔎  Starting search for '{}' using source '{}'..."
 DOWNLOAD_LIST_START = "📚 Starting download from list '{}'..."
+PROMPT_SELECT_ROM = "Enter the number of the ROM to download (or press Enter to cancel)"
+ROM_SELECTED_FOR_DOWNLOAD = "ROM '{}' selected for download."
+LIST_PROCESSING_ROM = "Processing '{}'..."
 
-# Logging Messages
-LOGGING_SYSTEM_SETUP = "Logging system configured."
-
-# CrocDB API Handler Messages
+# === API Handler ===
 API_SEARCH_ATTEMPT = "Attempting to search for '{}' on the API: {}"
 API_SEARCH_NO_RESULTS = "No results found in the API for '{}'."
 API_SEARCH_SUCCESS = "API search successful: {} results for '{}'."
 API_DETAILS_ATTEMPT = "Attempting to get details for rom_id '{}' from API: {}"
 API_DETAILS_SUCCESS = "Successfully retrieved details for ROM '{}'."
-API_HTTP_ERROR = "HTTP error while accessing URL '{}'. Status code: {}"
-API_REQUEST_ERROR = "Connection error while accessing URL '{}'. Details: {}"
-API_UNEXPECTED_ERROR = "Unexpected error in function '{}': {}"
+FALLBACK_TO_API = "Not found locally. Falling back to API for ROM id: {}"
 
-SEARCH_FAILED = "Search failed. Check logs for more details."
-SEARCH_NO_RESULTS_FOUND = "No results found for '{}'."
-SEARCH_RESULTS_TITLE = "Search results:"
-PROMPT_SELECT_ROM = "Enter the number of the ROM to download (or press Enter to cancel)"
-ACTION_CANCELLED = "Action cancelled."
-ROM_SELECTED_FOR_DOWNLOAD = "ROM '{}' selected for download."
-ERROR_INVALID_SELECTION = "Invalid selection. Please choose a number from the list."
-ERROR_INVALID_NUMBER = "Invalid input. Please enter a number."
-LOCAL_SEARCH_NOT_IMPLEMENTED = "Local search has not been implemented yet."
+# === Local DB Handler ===
+LOCAL_DB_DIR_NOT_FOUND = "Local database directory not found at: {}"
+LOCAL_DB_NO_FILES = "No .json files found in the database directory: {}"
+LOCAL_DB_SEARCH_START = "Starting local search for '{}' (this may take a while)..."
+LOCAL_DB_FILE_PROCESSING = "Processing database file: {}"
+LOCAL_DB_SEARCH_COMPLETE = "Local search complete: {} results for '{}'."
+LOCAL_DB_DETAILS_ATTEMPT = "Fetching details for rom_id '{}' from local database."
+LOCAL_DB_DETAILS_SUCCESS = "Details for ROM '{}' found in local database."
 
-# CrocDB Local DB Handler Messages
-LOCAL_DB_DIR_NOT_FOUND = "Diretório do banco de dados local não encontrado em: {}"
-LOCAL_DB_NO_FILES = "Nenhum arquivo .json encontrado no diretório do banco de dados: {}"
-LOCAL_DB_SEARCH_START = "Iniciando busca local por '{}' (isso pode demorar)..."
-LOCAL_DB_FILE_PROCESSING = "Processando arquivo de banco de dados: {}"
-LOCAL_DB_FILE_ERROR = "Erro ao ler ou processar o arquivo de banco de dados '{}': {}"
-LOCAL_DB_SEARCH_COMPLETE = "Busca local concluída: {} resultados para '{}'."
-LOCAL_DB_DETAILS_ATTEMPT = "Buscando detalhes para o rom_id '{}' no banco de dados local."
-LOCAL_DB_DETAILS_SUCCESS = "Detalhes da ROM '{}' encontrados no banco de dados local."
-LOCAL_DB_ROM_NOT_FOUND = "A ROM com id '{}' não foi encontrada no banco de dados local."
+# === List File Processing ===
+PROCESSING_LIST_FILE = "Processing list file: {}"
+LIST_FILE_NOT_FOUND = "List file not found: {}"
+LIST_FILE_INVALID = "Invalid or malformed list file: {}"
+LIST_PROCESSING_COMPLETE = "List processing complete. {} of {} ROMs found and ready for download."
 
-# List processing messages
-PROCESSING_LIST_FILE = "Processando arquivo de lista: {}"
-LIST_FILE_NOT_FOUND = "Arquivo de lista não encontrado: {}"
-LIST_FILE_INVALID = "Arquivo de lista inválido ou mal formatado: {}"
-LIST_PROCESSING_COMPLETE = "Processamento da lista concluído. {} de {} ROMs encontradas e prontas para download."
-FALLBACK_TO_API = "Não encontrada localmente. Recorrendo à API para a ROM id: {}"
-ROM_NOT_FOUND_ANYWHERE = "ERRO: A ROM com id '{}' não foi encontrada localmente nem na API."
-
-# Mirror Tester
+# === Mirror Tester ===
 MIRROR_TEST_STARTING = "Starting mirror speed test..."
 MIRROR_TEST_NO_LINKS = "No links provided for mirror test."
 MIRROR_TEST_DOWNLOADING = "  - Testing download from {}..."
@@ -59,40 +48,44 @@ MIRROR_TEST_HOST_FAILED = "Host test failed for '{}': {}"
 MIRROR_TEST_ALL_FAILED = "All test mirrors failed. Using default mirror."
 MIRROR_TEST_CONCLUSION = "Test complete. Fastest mirror is '{}' with {}."
 
-# Download Manager
+# === Download Manager ===
 DOWNLOAD_ALREADY_EXISTS = "ROM '{}' already exists in the destination directory and is validated. Skipping."
 DOWNLOAD_ATTEMPTING = "Downloading '{}' from mirror: {}"
 DOWNLOAD_PROGRESS_DESC = "Downloading {}"
 DOWNLOAD_SUCCESS = "Successfully downloaded ROM '{}'."
-DOWNLOAD_SIZE_MISMATCH = "Validation error for '{}'. Expected size: {}, downloaded: {}."
-DOWNLOAD_HOST_ERROR = "Connection error with host '{}': {}"
-DOWNLOAD_ALL_MIRRORS_FAILED = "Failed to download '{}' after trying all mirrors and retries."
 MOVE_STARTING = "Moving '{}' to its final directory..."
 MOVE_SUCCESS = "Successfully moved to: {}"
 
-FINAL_REPORT_SUCCESS = "Successfully completed: {}"
-FINAL_REPORT_FAILURE = "Failures: {} (check error.log for details)"
-FINAL_REPORT_LOGS = "Logs saved in: {}"
-LIST_PROCESSING_ROM = "Processing '{}'..."
-FINAL_REPORT_SINGLE_DOWNLOAD = "Single download operation complete."
-
-# App Description
-APP_DESCRIPTION = "Command-line tool to download ROMs via CrocDB."
-COMMANDS_HELP = "Available commands"
-
-# Interactive Shell
-INTERACTIVE_SHELL_WELCOME = "Welcome to the Interactive Shell. Type 'help' for a list of commands or 'exit' to quit."
-INTERACTIVE_SHELL_EXIT = "Exiting shell. Goodbye!"
-
-# Update Checker
+# === Update Checker ===
 UPDATE_CHECKING_TOOL = "Checking for tool updates..."
 UPDATE_TOOL_AVAILABLE = "A new version of the tool is available! It's recommended to run 'git pull' to update."
 UPDATE_CHECKING_CROCDB = "Checking for CrocDB database updates..."
 UPDATE_CROCDB_SUCCESS = "The '{}' database has been updated with new information."
 
-# Interactive Error Handling
+# === Final Reports ===
+FINAL_REPORT_SUCCESS = "Successfully completed: {}"
+FINAL_REPORT_FAILURE = "Failures: {} (check error.log for details)"
+FINAL_REPORT_LOGS = "Logs saved in: {}"
+FINAL_REPORT_SINGLE_DOWNLOAD = "Single download operation complete."
+
+# === Errors & Actions ===
+ACTION_CANCELLED = "Action cancelled."
+ERROR_INVALID_SELECTION = "Invalid selection. Please choose a number from the list."
+ERROR_INVALID_NUMBER = "Invalid input. Please enter a number."
+ERROR_INVALID_CHOICE = "Invalid option."
+SEARCH_FAILED = "Search failed. Check logs for more details."
+SEARCH_NO_RESULTS_FOUND = "No results found for '{}'."
+ROM_NOT_FOUND_ANYWHERE = "ERROR: ROM with id '{}' could not be found locally or on the API."
+API_HTTP_ERROR = "HTTP error while accessing URL '{}'. Status code: {}"
+API_REQUEST_ERROR = "Connection error while accessing URL '{}'. Details: {}"
+API_UNEXPECTED_ERROR = "Unexpected error in function '{}': {}"
+LOCAL_DB_FILE_ERROR = "Error reading or processing database file '{}': {}"
+LOCAL_DB_ROM_NOT_FOUND = "ROM with id '{}' was not found in the local database."
+DOWNLOAD_SIZE_MISMATCH = "Validation error for '{}'. Expected size: {}, downloaded: {}."
+DOWNLOAD_HOST_ERROR = "Connection error with host '{}': {}"
+DOWNLOAD_ALL_MIRRORS_FAILED = "Failed to download '{}' after trying all mirrors and retries."
 ERROR_INSUFFICIENT_SPACE = "Insufficient disk space. Required: {}, Available: {}"
 PROMPT_INSUFFICIENT_SPACE = "Free up space and press (R) to retry, or (C) to cancel this ROM's download: "
 SUCCESS_SPACE_FREED = "Sufficient space detected. Resuming..."
-ERROR_INVALID_CHOICE = "Invalid option."
 DOWNLOAD_CANCELLED_BY_USER_NO_SPACE = "Download of '{}' cancelled by user due to lack of space."
+RECHECKING_SPACE = "Re-checking space..."
