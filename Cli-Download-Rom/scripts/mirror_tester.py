@@ -67,11 +67,14 @@ def find_fastest_mirror(test_rom_details):
         logging.warning(t.get_string("MIRROR_TEST_ALL_FAILED"))
         return config['mirrors']['default_preferred_mirror'][0]
 
-    # Ordena por velocidade (maior é melhor)
+# Ordena por velocidade (maior é melhor)
     results.sort(key=lambda x: x['speed'], reverse=True)
     fastest = results[0]
     
-    logging.info(t.get_string("MIRROR_TEST_CONCLUSION", fastest['host'], f"{fastest['speed']:.2f} MB/s"))
-    print(f"🏆 {t.get_string('MIRROR_TEST_CONCLUSION', fastest['host'], f'{fastest['speed']:.2f} MB/s')}")
+    # Cria a string de velocidade formatada separadamente para evitar o erro de sintaxe
+    speed_str = f"{fastest['speed']:.2f} MB/s"
+    
+    logging.info(t.get_string("MIRROR_TEST_CONCLUSION", fastest['host'], speed_str))
+    print(f"🏆 {t.get_string('MIRROR_TEST_CONCLUSION', fastest['host'], speed_str)}")
     
     return fastest['host']
