@@ -23,6 +23,8 @@ htmlcov/
 .cache
 .pytest_cache/
 .hypothesis/
+/Cli-Download-Rom/bin/
+/Cli-Download-Rom/bin/aria2c.exe
 
 # Arquivos gerados pela ferramenta
 /Cli-Download-Rom/logs/
