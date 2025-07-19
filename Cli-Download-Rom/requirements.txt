@@ -4,3 +4,4 @@ PyYAML
 python-dotenv
 unidecode
 colorama
+aria2p
