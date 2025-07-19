@@ -28,3 +28,5 @@ mirrors:
   enable_mirror_test: true # Habilita teste de mirrors
   force_preferred_mirror: false # Força o uso do mirror preferido
   default_preferred_mirror: ["Myrient", ""] # Mirror preferido por padrão
+  download_splits: 5
+  connections_per_server: 5

@@ -40,39 +40,39 @@ PLATFORM_KEYWORDS = {
 }
 
 def _rank_search_results(results, query):
-    """Reordena os resultados da busca com base em um score de relevância aprimorado."""
-    query = query.lower()
-    query_words = set(query.split())
-    
+    """Reordena os resultados da busca com base em um score de relevância final."""
+    query_lower = query.lower()
+    query_words = set(query_lower.split())
+
     for rom in results:
         score = 0
         title_lower = rom.get('title', '').lower()
-        
-        # 1. Bônus mais alto se a busca completa for uma frase exata no título
-        if query in title_lower:
+        title_words = set(title_lower.split())
+
+        # 1. Bônus por correspondência de todas as palavras (mais importante)
+        if query_words.issubset(title_words):
             score += 1000
-        
-        # 2. Bônus por cada palavra da busca encontrada no título
-        words_found_count = 0
+            
+            # Penalidade baseada na quantidade de palavras extras, para priorizar títulos exatos
+            extra_words = len(title_words) - len(query_words)
+            score -= extra_words * 10
+
+        # 2. Bônus por correspondência de frase exata
+        if query_lower in title_lower:
+            score += 500
+
+        # 3. Bônus se o título começar com a busca
+        if title_lower.startswith(query_lower):
+            score += 200
+
+        # 4. Bônus menor para cada palavra individual encontrada
         for word in query_words:
             if word in title_lower:
-                words_found_count += 1
-        score += words_found_count * 20
-        
-        # 3. Bônus massivo se TODAS as palavras da busca estiverem no título
-        if words_found_count == len(query_words):
-            score += 200
-            
-        # 4. Bônus se o título começar com a busca
-        if title_lower.startswith(query):
-            score += 50
-            
-        # 5. Penalidade por títulos muito longos (menos diretos)
-        score -= len(title_lower)
+                score += 10
         
         rom['relevance_score'] = score
         
-    return sorted(results, key=lambda x: x['relevance_score'], reverse=True)
+    return sorted(results, key=lambda x: x.get('relevance_score', 0), reverse=True)
 
 def _get_roms_details_from_list(rom_list_summary):
     """Busca os detalhes completos para uma lista de ROMs (local com fallback para API)."""
