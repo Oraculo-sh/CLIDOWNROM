@@ -19,6 +19,7 @@ updates:
 # Configurações da API CrocDB
 api:
   crocdb_api_url: "https://api.crocdb.net" # URL da API do CrocDB
+  max_search_pages: 5
 
 # Configurações de Mirror e Download
 mirrors:
