@@ -7,24 +7,28 @@ from ..utils.localization import t
 
 class CrocDBAPIHandler:
     """
-    Gerencia a comunicação com a API oficial do CrocDB, seguindo a documentação.
+    Gerencia a comunicação com a API oficial do CrocDB.
     """
     def __init__(self):
         if not config:
             raise ValueError("Configuração não carregada.")
         self.base_url = config['api']['crocdb_api_url']
 
-    def search_rom(self, query):
+    def search_rom(self, query, platforms=None, regions=None):
         """
-        Busca por ROMs na API usando o método POST e um corpo JSON.
+        Busca por ROMs na API usando o método POST e filtros.
         """
         search_url = f"{self.base_url}/search"
-        payload = {"search_key": query}
+        # Adiciona os filtros ao payload se eles forem fornecidos
+        payload = {
+            "search_key": query,
+            "platforms": platforms or [],
+            "regions": regions or []
+        }
         
         logging.info(t.get_string("API_SEARCH_ATTEMPT", query, search_url))
 
         try:
-            # CORREÇÃO: Usando requests.post() com um payload JSON
             response = requests.post(search_url, json=payload, timeout=15)
             response.raise_for_status()
             
@@ -49,7 +53,7 @@ class CrocDBAPIHandler:
 
     def get_rom_details(self, slug):
         """
-        Obtém os detalhes completos de uma ROM usando seu slug através do endpoint /entry.
+        Obtém os detalhes completos de uma ROM usando seu slug.
         """
         details_url = f"{self.base_url}/entry"
         payload = {"slug": slug}
@@ -57,7 +61,6 @@ class CrocDBAPIHandler:
         logging.info(t.get_string("API_DETAILS_ATTEMPT", slug, details_url))
 
         try:
-            # CORREÇÃO: Usando requests.post() com o slug no payload
             response = requests.post(details_url, json=payload, timeout=15)
             response.raise_for_status()
 
