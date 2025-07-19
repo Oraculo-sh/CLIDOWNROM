@@ -1,6 +1,4 @@
-﻿# Cli-Download-Rom/cli.py (VERSÃO FINAL COMPLETA)
-
-import argparse
+﻿import argparse
 import logging
 import json
 import sys
@@ -8,17 +6,38 @@ import cmd
 import shlex
 from pathlib import Path
 
-# Módulos de utilidades
 from .utils.localization import t
 from .utils.config_loader import config
-
-# Módulos de scripts com a lógica principal
 from .scripts.crocdb_api_handler import CrocDBAPIHandler
 from .scripts.crocdb_db_handler import CrocDBLocalHandler
 from .scripts.mirror_tester import find_fastest_mirror
 from .scripts.download_manager import download_rom
 
-# --- Funções Auxiliares ---
+# DICIONÁRIO DE PALAVRAS-CHAVE DE PLATAFORMAS
+PLATFORM_KEYWORDS = {
+    'nes': ['nes', 'nintendo'],
+    'snes': ['snes', 'super nintendo'],
+    'n64': ['n64', 'nintendo 64'],
+    'gc': ['gc', 'gamecube'],
+    'wii': ['wii'],
+    'wiiu': ['wiiu'],
+    'gb': ['gb', 'game boy'],
+    'gbc': ['gbc', 'game boy color'],
+    'gba': ['gba', 'game boy advance'],
+    'nds': ['nds', 'nintendo ds'],
+    'dsi': ['dsi'],
+    '3ds': ['3ds'],
+    'n3ds': ['n3ds', 'new 3ds'],
+    'ps1': ['ps1', 'psx', 'playstation'],
+    'ps2': ['ps2', 'playstation 2'],
+    'ps3': ['ps3', 'playstation 3'],
+    'psp': ['psp'],
+    'psv': ['psv', 'ps vita'],
+    'smd': ['smd', 'genesis', 'mega drive'],
+    'scd': ['scd', 'sega cd'],
+    'sat': ['sat', 'saturn'],
+    'dc': ['dc', 'dreamcast']
+}
 
 def _rank_search_results(results, query):
     """Reordena os resultados da busca com base em um score de relevância aprimorado."""
@@ -75,12 +94,10 @@ def _get_roms_details_from_list(rom_list_summary):
 
         if not rom_id and not slug: continue
 
-        # Prioriza a busca por rom_id se disponível
         details = local_handler.get_rom_details(rom_id) if rom_id else None
         
         if not details:
             logging.info(t.get_string("FALLBACK_TO_API", rom_id or slug))
-            # A API espera o slug
             if slug:
                  details = api_handler.get_rom_details(slug)
             else:
@@ -121,7 +138,7 @@ def _orchestrate_downloads(roms_to_download):
 def _handle_rom_selection(results):
     """Exibe resultados e gerencia a seleção interativa do usuário."""
     print(f"\n✔️ {t.get_string('SEARCH_RESULTS_TITLE')}")
-    for i, rom in enumerate(results[:100]): # Limita a exibição para os 100 primeiros resultados
+    for i, rom in enumerate(results[:100]):
         regions = ", ".join(rom.get('regions', []))
         print(f"  [{i+1}] {rom['title']} ({rom['platform']}) [{regions}]")
     while True:
@@ -145,28 +162,41 @@ def _handle_rom_selection(results):
             print(f"\n{t.get_string('ACTION_CANCELLED')}")
             return None
 
-# --- Handlers de Comando ---
-
 def handle_search(args):
-    """Lida com o comando 'search', com filtros e ranking."""
+    """Lida com o comando 'search', com filtros automáticos e ranking."""
     logging.info(t.get_string("SEARCH_START", args.query, args.source))
     
+    query = args.query
+    platforms_to_filter = args.platform
+    
+    if not platforms_to_filter:
+        query_words = query.lower().split()
+        detected_platforms = []
+        for word in query_words:
+            for platform_id, keywords in PLATFORM_KEYWORDS.items():
+                if word in keywords:
+                    if platform_id not in detected_platforms:
+                        detected_platforms.append(platform_id)
+        if detected_platforms:
+            platforms_to_filter = detected_platforms
+            logging.info(f"Filtro de plataforma detectado: {platforms_to_filter}")
+
     try:
         if args.source == 'local':
             handler = CrocDBLocalHandler()
-            results = handler.search_rom(args.query) # Filtros no DB local precisam de SQL mais complexo
+            results = handler.search_rom(query)
         else:
             handler = CrocDBAPIHandler()
-            results = handler.search_rom(args.query, args.platform, args.region)
+            results = handler.search_rom(query, platforms_to_filter, args.region)
     except FileNotFoundError as e:
         print(f"❌ {e}")
         return
 
     if not results:
-        print(f"\nℹ️ {t.get_string('SEARCH_NO_RESULTS_FOUND', args.query)}")
+        print(f"\nℹ️ {t.get_string('SEARCH_NO_RESULTS_FOUND', query)}")
         return
 
-    ranked_results = _rank_search_results(results, args.query)
+    ranked_results = _rank_search_results(results, query)
     rom_details_to_download = _handle_rom_selection(ranked_results)
 
     if rom_details_to_download:
