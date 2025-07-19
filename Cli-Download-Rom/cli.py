@@ -21,24 +21,35 @@ from .scripts.download_manager import download_rom
 # --- Funções Auxiliares ---
 
 def _rank_search_results(results, query):
-    """Reordena os resultados da busca com base em um score de relevância."""
-    query_words = set(query.lower().split())
+    """Reordena os resultados da busca com base em um score de relevância aprimorado."""
+    query = query.lower()
+    query_words = set(query.split())
     
     for rom in results:
         score = 0
         title_lower = rom.get('title', '').lower()
         
-        # Bônus alto para cada palavra da busca encontrada no título
+        # 1. Bônus mais alto se a busca completa for uma frase exata no título
+        if query in title_lower:
+            score += 1000
+        
+        # 2. Bônus por cada palavra da busca encontrada no título
+        words_found_count = 0
         for word in query_words:
             if word in title_lower:
-                score += 20
+                words_found_count += 1
+        score += words_found_count * 20
         
-        # Bônus muito alto se o título começar com a busca
-        if title_lower.startswith(query.lower()):
+        # 3. Bônus massivo se TODAS as palavras da busca estiverem no título
+        if words_found_count == len(query_words):
+            score += 200
+            
+        # 4. Bônus se o título começar com a busca
+        if title_lower.startswith(query):
             score += 50
             
-        # Bônus por ser uma correspondência mais curta e direta
-        score -= len(title_lower) * 0.1
+        # 5. Penalidade por títulos muito longos (menos diretos)
+        score -= len(title_lower)
         
         rom['relevance_score'] = score
         
