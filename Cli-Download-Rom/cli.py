@@ -5,7 +5,7 @@ import sys
 import cmd
 import shlex
 import os
-import subprocess
+import glob
 from pathlib import Path
 
 from .utils.localization import t
@@ -41,9 +41,10 @@ def _rank_search_results(results, query):
             score += 500
         if title_lower.startswith(query_lower):
             score += 200
-        for word in query_words:
-            if word in title_lower:
-                score += 10
+        platform_lower = rom.get('platform', '').lower()
+        if platform_lower in query_words:
+            score += 100
+        score -= len(title_lower)
         rom['relevance_score'] = score
     return sorted(results, key=lambda x: x.get('relevance_score', 0), reverse=True)
 
@@ -168,9 +169,9 @@ def handle_search(args):
 
 def handle_download_list(args):
     filepath = args.filepath
+    list_dir = Path(__file__).parent.parent / config['general']['lists_directory']
     if not filepath:
-        list_dir = Path(__file__).parent.parent / config['general']['lists_directory']
-        json_files = list(list_dir.glob('*.json'))
+        json_files = sorted(list(list_dir.glob('*.json')))
         if not json_files:
             print(f"❌ {t.get_string('LIST_NO_FILES_FOUND')}")
             return
@@ -188,10 +189,17 @@ def handle_download_list(args):
                 print(f"❌ {t.get_string('ERROR_INVALID_SELECTION')}"); return
         except (ValueError, IndexError):
             print(f"❌ {t.get_string('ERROR_INVALID_NUMBER')}"); return
+    
     list_path = Path(filepath)
+    if not list_path.is_absolute() and not list_path.exists():
+        list_path = list_dir / list_path.name
+    
     try:
         with open(list_path, 'r', encoding='utf-8') as f:
             rom_list_summary = json.load(f)
+    except FileNotFoundError:
+        print(f"❌ {t.get_string('LIST_FILE_NOT_FOUND', str(filepath))}")
+        return
     except Exception as e:
         print(f"❌ {t.get_string('LIST_FILE_INVALID', e)}"); return
     
@@ -254,6 +262,7 @@ class InteractiveShell(cmd.Cmd):
     def __init__(self, parser):
         super().__init__()
         self.parser = parser
+        self.commands = list(self.parser._subparsers._group_actions[0].choices.keys())
 
     def help_search(self): print(t.get_string("HELP_SEARCH"))
     def help_download_list(self): print(t.get_string("HELP_DOWNLOAD_LIST"))
@@ -281,44 +290,47 @@ class InteractiveShell(cmd.Cmd):
     def do_EOF(self, arg): print(); return self.do_exit(arg)
     def emptyline(self): pass
 
-    def complete_search(self, text, line, begidx, endidx):
-        words = line.split()
-        current_word = text
-        if not text:
-            current_word = words[-1] if len(words) > 1 else ''
-        
-        previous_word = words[-2] if len(words) > 1 and not text else words[-1]
+    def completenames(self, text, *ignored):
+        return [command for command in self.commands if command.startswith(text)]
 
-        if current_word.startswith('--'):
+    def complete(self, text, state):
+        try:
+            line = sys.stdin.readline().strip() if 'readline' not in sys.modules else sys.modules['readline'].get_line_buffer()
+            words = shlex.split(line, posix=(os.name != 'nt'))
+            if not words or (len(words) == 1 and not line.endswith(' ')):
+                return (self.completenames(text) + [None])[state]
+            command = words[0]
+            completer_method_name = f'complete_{command}'
+            if hasattr(self, completer_method_name):
+                completer = getattr(self, completer_method_name)
+                return completer(text, line, words)[state]
+        except Exception:
+            pass
+        return None
+
+    def complete_download_list(self, text, line, words):
+        list_dir = config['general']['lists_directory']
+        path_prefix = os.path.join(list_dir, '')
+        if '/' in text or '\\' in text:
+            path_prefix = os.path.join(list_dir, os.path.dirname(text))
+        
+        matches = glob.glob(os.path.join(path_prefix, os.path.basename(text) + '*.json'))
+        return [os.path.relpath(m, list_dir) for m in matches]
+
+    def complete_search(self, text, line, words):
+        last_word = words[-1]
+        if text == '': 
+            previous_word = last_word
+        else:
+            previous_word = words[-2] if len(words) > 1 else ''
+
+        if text.startswith('--'):
             opts = ['--source', '--platform', '--region']
-            return [o for o in opts if o.startswith(current_word)]
+            return [o for o in opts if o.startswith(text)]
         if previous_word == '--source':
             opts = ['api', 'local']
             return [o for o in opts if o.startswith(text)]
         return []
-    def complete_download_list(self, text, line, begidx, endidx):
-        list_dir_str = config['general']['lists_directory']
-        full_path_str = text
-        base_dir = list_dir_str
-        
-        if os.path.dirname(text):
-            base_dir = os.path.join(list_dir_str, os.path.dirname(text))
-        
-        filename_part = os.path.basename(text)
-
-        completions = []
-        try:
-            if os.path.isdir(base_dir):
-                for f in os.listdir(base_dir):
-                    if f.startswith(filename_part):
-                        completed_path = os.path.join(os.path.dirname(full_path_str), f)
-                        if os.path.isdir(os.path.join(list_dir_str, completed_path)):
-                            completions.append(completed_path + os.sep)
-                        else:
-                            completions.append(completed_path)
-        except OSError:
-            pass # Ignora erros de permissão etc
-        return completions
 
 def get_parser():
     parser = argparse.ArgumentParser(add_help=False)
