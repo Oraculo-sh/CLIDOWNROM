@@ -10,7 +10,7 @@ from ..scripts.crocdb_api_handler import CrocDBAPIHandler
 from ..scripts.crocdb_db_handler import CrocDBLocalHandler
 from ..scripts.mirror_tester import find_fastest_mirror
 from ..scripts.download_manager import download_rom
-from .shell import PLATFORM_KEYWORDS # Importa do novo ficheiro shell.py
+from .constants import PLATFORM_KEYWORDS
 
 def _rank_search_results(results, query):
     query_lower = query.lower()
