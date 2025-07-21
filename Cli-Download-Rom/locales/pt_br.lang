@@ -123,3 +123,7 @@ HELP_SEARCH = "Busca por ROMs. Uso: search <termo> [--source api|local] [-p plat
 HELP_DOWNLOAD_LIST = "Inicia o download de uma lista de ROMs. Se nenhum arquivo for especificado, um menu interativo aparecerá. Uso: download_list [caminho_do_arquivo]"
 HELP_UPDATE_DB = "Baixa as fontes de dados e constrói ou atualiza o banco de dados SQLite local. Pode demorar."
 HELP_EXIT = "Sai do shell interativo."
+DB_STATUS_NOT_FOUND = "AVISO: Banco de dados local não encontrado. Para usar a busca local, execute o comando 'update-db'."
+DB_STATUS_OUTDATED = "AVISO: Seu banco de dados local tem mais de {} dias. Recomenda-se executar 'update-db' para obter informações atualizadas."
+LIST_CONFIRM_DOWNLOAD_TEXT = "Esta lista contém {} ROMs. Deseja iniciar o download?"
+LIST_CONFIRM_DOWNLOAD_PROMPT = "(S/N):"

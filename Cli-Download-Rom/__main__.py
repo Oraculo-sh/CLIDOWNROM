@@ -7,6 +7,7 @@ from .utils.config_loader import config
 from .utils.logging_manager import setup_logging
 from .utils.dependency_checker import check_system_dependencies, check_and_clone_dependencies
 from .scripts.check_updates import check_for_tool_updates, check_for_crocdb_updates
+from .utils.db_checker import check_database_status
 from . import cli
 
 def main():
@@ -14,18 +15,16 @@ def main():
     load_dotenv()
 
     if not config:
-        print("ERRO: Falha ao carregar 'config.yml'. A aplicação não pode continuar.")
-        return 
+        print("ERRO: Falha ao carregar 'config.yml'."); return
         
     create_project_structure()
-    
     check_system_dependencies()
     check_and_clone_dependencies()
+    setup_logging()
 
     check_for_tool_updates()
     check_for_crocdb_updates()
-
-    setup_logging()
+    check_database_status()
 
     try:
         cli.start()

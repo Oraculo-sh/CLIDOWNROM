@@ -112,3 +112,7 @@ ARIA2C_AUTOINSTALL_SUCCESS = "aria2c успешно установлен в ло
 ARIA2C_AUTOINSTALL_FAILED = "Не удалось автоматически установить aria2c. Пожалуйста, установите его вручную и добавьте в PATH."
 ERROR_ARIA2C_LINUX_INSTRUCTIONS = "Please install it using your distribution's package manager (e.g., sudo apt-get install aria2)."
 ERROR_ARIA2C_MACOS_INSTRUCTIONS = "Please install it using Homebrew (brew install aria2)."
+DB_STATUS_NOT_FOUND = "WARNING: Local database not found. To use local search, run the 'update-db' command."
+DB_STATUS_OUTDATED = "WARNING: Your local database is more than {} days old. It's recommended to run 'update-db' to get the latest info."
+LIST_CONFIRM_DOWNLOAD_TEXT = "This list contains {} ROMs. Do you want to start the download?"
+LIST_CONFIRM_DOWNLOAD_PROMPT = "(Y/N):"

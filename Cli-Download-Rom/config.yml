@@ -8,6 +8,8 @@ general:
   lists_directory: "list" # Diretório onde as listas de ROMs serão armazenadas
   temp_directory: "temp" # Diretório temporário para downloads
   logs_directory: "logs" # Diretório para logs
+  db_update_warning_days: 30
+
 
 # Configurações de Atualização
 updates:
