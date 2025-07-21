@@ -7,23 +7,11 @@ from pathlib import Path
 
 from ..utils.localization import t
 from ..utils.config_loader import config
-from .commands import handle_search, handle_download_list, handle_update_db
-
-PLATFORM_KEYWORDS = {
-    'nes': ['nes', 'nintendo'], 'snes': ['snes', 'super nintendo'],
-    'n64': ['n64', 'nintendo 64'], 'gc': ['gc', 'gamecube'], 'wii': ['wii'],
-    'wiiu': ['wiiu'], 'gb': ['gb', 'game boy'], 'gbc': ['gbc', 'game boy color'],
-    'gba': ['gba', 'game boy advance'], 'nds': ['nds', 'nintendo ds'], 'dsi': ['dsi'],
-    '3ds': ['3ds'], 'n3ds': ['n3ds', 'new 3ds'], 'ps1': ['ps1', 'psx', 'playstation'],
-    'ps2': ['ps2', 'playstation 2'], 'ps3': ['ps3', 'playstation 3'],
-    'psp': ['psp'], 'psv': ['psv', 'ps vita'], 'smd': ['smd', 'genesis', 'mega drive'],
-    'scd': ['scd', 'sega cd'], 'sat': ['sat', 'saturn'], 'dc': ['dc', 'dreamcast']
-}
+from .commands import handle_search, handle_download, handle_download_list
 
 class InteractiveShell(cmd.Cmd):
     intro = t.get_string("INTERACTIVE_SHELL_WELCOME")
     prompt = 'Downloader> '
-
     def __init__(self, parser):
         super().__init__()
         self.parser = parser
@@ -34,7 +22,7 @@ class InteractiveShell(cmd.Cmd):
 
     def help_search(self): print(t.get_string("HELP_SEARCH"))
     def help_download_list(self): print(t.get_string("HELP_DOWNLOAD_LIST"))
-    def help_update_db(self): print(t.get_string("HELP_UPDATE_DB"))
+    def help_download(self): print(t.get_string("HELP_DOWNLOAD"))
     def help_exit(self): print(t.get_string("HELP_EXIT"))
 
     def do_search(self, arg_string):
@@ -42,15 +30,17 @@ class InteractiveShell(cmd.Cmd):
             args = self.parser.parse_args(['search'] + shlex.split(arg_string, posix=(os.name != 'nt')))
             handle_search(args)
         except SystemExit: pass
+    def do_download(self, arg_string):
+        try:
+            args = self.parser.parse_args(['download'] + shlex.split(arg_string, posix=(os.name != 'nt')))
+            handle_download(args)
+        except SystemExit: pass
     def do_download_list(self, arg_string):
         try:
-            args = self.parser.parse_args(['download-list'] + shlex.split(arg_string, posix=(os.name != 'nt')))
+            # Para permitir a chamada interativa sem argumentos
+            args_list = ['download-list'] + shlex.split(arg_string, posix=(os.name != 'nt'))
+            args = self.parser.parse_args(args_list)
             handle_download_list(args)
-        except SystemExit: pass
-    def do_update_db(self, arg_string):
-        try:
-            args = self.parser.parse_args(['update-db'] + shlex.split(arg_string, posix=(os.name != 'nt')))
-            handle_update_db(args)
         except SystemExit: pass
     def do_clear(self, arg):
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -67,7 +57,6 @@ class InteractiveShell(cmd.Cmd):
     
     def complete(self, text, state):
         try:
-            # A biblioteca readline não está disponível no Windows por padrão, então usamos um fallback
             line = ""
             if 'readline' in sys.modules:
                 line = sys.modules['readline'].get_line_buffer()
@@ -83,24 +72,26 @@ class InteractiveShell(cmd.Cmd):
                 if hasattr(self, completer_method_name):
                     completer = getattr(self, completer_method_name)
                     return (completer(text, line, words) + [None])[state]
-        except Exception:
-            pass
+        except Exception: pass
         return None
 
     def complete_download_list(self, text, line, words):
         list_dir = Path(__file__).parent.parent / config['general']['lists_directory']
         text_to_match = str(list_dir / (text + '*'))
         matches = glob.glob(text_to_match)
-        # Retorna o caminho relativo à pasta do projeto para ser mais limpo
-        return [str(Path(config['general']['lists_directory']) / Path(m).name) for m in matches]
-    
-    def complete_search(self, text, line, words):
-        last_arg = words[-1] if text == '' else words[-2]
+        return [os.path.basename(m) for m in matches]
 
+    def complete_search(self, text, line, words):
+        # Lógica de autocompletar para flags
+        last_word = words[-1] if text == '' else words[-2] if len(words) > 1 else ''
         if text.startswith('-'):
-            opts = ['--source', '--platform', '--region']
+            opts = ['--platform', '--region', '--slug', '--rom_id']
             return [o for o in opts if o.startswith(text)]
-        if last_arg == '--source':
-            opts = ['api', 'local']
+        return []
+
+    def complete_download(self, text, line, words):
+        # Lógica de autocompletar para flags
+        if text.startswith('-'):
+            opts = ['--slug', '--rom_id', '--mirror', '--noboxart', '--noaria2c']
             return [o for o in opts if o.startswith(text)]
         return []

@@ -1,35 +1,16 @@
-# Arquivos de ambiente
-.env
-
-# Dependências e cache do Python
+# Ambiente Virtual e Cache do Python
+venv/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.eggs/
-.egg-info/
-*.egg
-dist/
-build/
-htmlcov/
-.tox/
-.nox/
-.coverage
-.cache
-.pytest_cache/
-.hypothesis/
-/Cli-Download-Rom/bin/
-/Cli-Download-Rom/bin/aria2c.exe
 
-# Arquivos gerados pela ferramenta
-/Cli-Download-Rom/logs/
-/Cli-Download-Rom/temp/
-/Cli-Download-Rom/ROMs/
-/Cli-Download-Rom/database/
-/Cli-Download-Rom/crocdb/
-/Cli-Download-Rom/list/
+# Ficheiros de configuração sensíveis
+.env
+
+# Ficheiros gerados pela aplicação
+Cli-Download-Rom/bin/
+Cli-Download-Rom/logs/
+Cli-Download-Rom/temp/
+Cli-Download-Rom/ROMs/
+
+# Ficheiros de IDE
+.vscode/

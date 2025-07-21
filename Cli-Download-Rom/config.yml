@@ -1,34 +1,20 @@
-﻿# Configurações Gerais
 general:
-  enable_logging: true # Habilita o registro de logs
-  log_level: "info" # Nível de log: "debug", "info", "warning", "error", "critical"
-  default_region_preference: ["US", "EU", "JP", "BR", ""]
-  default_language: "system" # "system" para usar o idioma do sistema, ou especificar um idioma como "en_us", "pt_br", etc.
-  roms_directory: "ROMs" # Diretório onde as ROMs serão armazenadas
-  lists_directory: "list" # Diretório onde as listas de ROMs serão armazenadas
-  temp_directory: "temp" # Diretório temporário para downloads
-  logs_directory: "logs" # Diretório para logs
-  db_update_warning_days: 30
+  enable_logging: true
+  log_level: "info"
+  default_language: "system"
+  roms_directory: "ROMs"
+  lists_directory: "list"
+  temp_directory: "temp"
+  logs_directory: "logs"
 
-
-# Configurações de Atualização
-updates:
-  check_tool_update_on_startup: true # Verifica atualizações do próprio CLI no início
-  tool_repository_url: "https://github.com/user/repo" # URL do repositório do CLI para atualizações
-  check_crocdb_update_on_startup: true # Verifica atualizações do CrocDB no início
-  crocdb-db_repository_url: "https://github.com/cavv-dev/crocdb-db"  # URL do repositório do CrocDB-db
-
-# Configurações da API CrocDB
 api:
-  crocdb_api_url: "https://api.crocdb.net" # URL da API do CrocDB
+  crocdb_api_url: "https://api.crocdb.net"
   max_search_pages: 5
 
-# Configurações de Mirror e Download
 mirrors:
-  max_retries: 3 # Número máximo de tentativas de download
-  retry_delay: 5 # Tempo de espera entre tentativas de download em segundos 
-  enable_mirror_test: true # Habilita teste de mirrors
-  force_preferred_mirror: false # Força o uso do mirror preferido
-  default_preferred_mirror: ["Myrient", ""] # Mirror preferido por padrão
-  download_splits: 5
-  connections_per_server: 5
+  download_splits: 10
+  connections_per_server: 10
+
+updates:
+  check_tool_update_on_startup: true
+  tool_repository_url: "https://github.com/Oraculo-adm/CLIDOWNROM"

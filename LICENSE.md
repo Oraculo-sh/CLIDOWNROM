@@ -10,7 +10,7 @@ b. Adapter’s License means the license You apply to Your Copyright and Similar
 
 c. Copyright and Similar Rights means copyright and/or similar rights closely related to copyright including, without limitation, performance, broadcast, sound recording, and Sui Generis Database Rights, regardless of how the rights are labeled or categorized. For purposes of this Public License, the rights specified in Section 2(b)(1)-(2) are not Copyright and Similar Rights.
 
-d. Effective Technological Measures means those measures that, in the absence of proper authority, may not be circumvented under laws fulfilling obligations under Article 11 of the WIPO Copyright Treaty adopted on December 20, 1996, and/or similar international agreements.
+d. Effective Technological Measures means those measures that, in the absence of proper authority, may not be circumvented under laws fulfilling obligations under Article 11 of the WIPO Copyright Treaty adopted on December 20, 196, and/or similar international agreements.
 
 e. Exceptions and Limitations means fair use, fair dealing, and/or any other exception or limitation to Copyright and Similar Rights that applies to Your use of the Licensed Material.
 
@@ -37,7 +37,7 @@ a. License grant.
         A. reproduce and Share the Licensed Material, in whole or in part, for NonCommercial purposes only; and
         B. produce, reproduce, and Share Adapted Material for NonCommercial purposes only.
 
-    2. Exceptions and Limitations. For the avoidance of doubt, where Exceptions and Limitations apply to Your use, the Public License does not apply, and You do not need to comply with its terms and conditions.
+    2. Exceptions and Limitations. For the avoidance of doubt, where Exceptions and Limitations apply to Your use, this Public License does not apply, and You do not need to comply with its terms and conditions.
 
     3. Term. The term of this Public License is specified in Section 6(a).
 
@@ -46,18 +46,17 @@ a. License grant.
     5. Downstream recipients.
 
         A. Offer from the Licensor – Licensed Material. Every recipient of the Licensed Material automatically receives an offer from the Licensor to exercise the Licensed Rights under the terms and conditions of this Public License.
-        B. Adapter’s License – Adapted Material. Every recipient of Adapted Material from You automatically receives an offer from You to exercise the Copyright and Similar Rights in Your contributions to the Adapted Material under the terms and conditions of the Adapter’s License You apply.
-        C. No downstream restrictions. You may not offer or impose any additional or different terms or conditions on, or apply any Effective Technological Measures to, the Licensed Material if doing so restricts exercise of the Licensed Rights by any recipient of the Licensed Material.
+        B. No downstream restrictions. You may not offer or impose any additional or different terms or conditions on, or apply any Effective Technological Measures to, the Licensed Material if doing so restricts exercise of the Licensed Rights by any recipient of the Licensed Material.
 
     6. No endorsement. Nothing in this Public License constitutes or may be construed as permission to assert or imply that You or Your use of the Licensed Material is connected with, or sponsored, endorsed, or granted official status by, the Licensor or others who receive attribution as provided in Section 3(a)(1)(A)(i).
 
 b. Other rights.
 
-    1. Moral rights, such as the right to be attributed as author, are not licensed under this Public License, nor are publicity, privacy, and/or other similar personality rights; however, to the extent possible, the Licensor waives and/or agrees not to assert any such rights held by the Licensor to the limited extent necessary to allow You to exercise the Licensed Rights, but not otherwise.
+    1. Moral rights, such as the right of integrity, are not licensed under this Public License, nor are publicity, privacy, and/or other similar personality rights; however, to the extent possible, the Licensor waives and/or agrees not to assert any such rights held by the Licensor to the limited extent necessary to allow You to exercise the Licensed Rights, but not otherwise.
 
     2. Patent and trademark rights are not licensed under this Public License.
 
-    3. To the extent possible, the Licensor waives any right to collect royalties from You for Your exercise of the Licensed Rights, whether directly or through a collecting society under any voluntary or waivable statutory or compulsory licensing scheme. In all other cases the Licensor expressly reserves any right to collect such royalties.
+    3. To the extent possible, the Licensor waives any right to collect royalties from You for the exercise of the Licensed Rights, whether directly or through a collecting society under any voluntary or waivable statutory or compulsory licensing scheme. In all other cases the Licensor expressly reserves any right to collect such royalties, including when the Licensed Material is used other than for NonCommercial purposes.
 
 Section 3 – License Conditions.
 
@@ -65,17 +64,17 @@ Your exercise of the Licensed Rights is expressly made subject to the following 
 
 a. Attribution.
 
-    1. If You Share the Licensed Material (including in Adapted Material), You must:
+    1. If You Share the Licensed Material (including in modified form), You must:
 
         A. retain the following if it is supplied by the Licensor with the Licensed Material:
-
             i. identification of the creator(s) of the Licensed Material and any others designated to receive attribution, in any reasonable manner requested by the Licensor (including by pseudonym if designated);
             ii. a copyright notice;
-            iii. a notice that refers to this Public License including the URI or hyperlink to it;
+            iii. a notice that refers to this Public License;
             iv. a notice that refers to the disclaimer of warranties;
             v. a URI or hyperlink to the Licensed Material to the extent reasonably practicable;
 
         B. indicate if You modified the Licensed Material and retain an indication of any previous modifications; and
+
         C. indicate the Licensed Material is licensed under this Public License, and include the text of, or the URI or hyperlink to, this Public License.
 
     2. You may satisfy the conditions in Section 3(a)(1) in any reasonable manner based on the medium, means, and context in which You Share the Licensed Material. For example, it may be reasonable to satisfy the conditions by providing a URI or hyperlink to a resource that includes the required information.
@@ -84,27 +83,33 @@ a. Attribution.
 
 b. ShareAlike.
 
-    If You Share Adapted Material You produce, the Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or a later version with the same License Elements, or a compatible license as identified by Creative Commons.
+    In addition to the conditions in Section 3(a), if You Share Adapted Material You produce, the following conditions also apply.
+
+    1. The Adapter’s License You apply must be a Creative Commons license with the same License Elements, this version or a later version, or a BY-NC-SA Compatible License.
+
+    2. You must include the text of, or the URI or hyperlink to, the Adapter's License You apply. You may satisfy this condition in any reasonable manner based on the medium, means, and context in which You Share Adapted Material.
+
+    3. You may not offer or impose any additional or different terms or conditions on, or apply any Effective Technological Measures to, Adapted Material that restrict exercise of the rights granted under the Adapter's License You apply.
 
 Section 4 – Sui Generis Database Rights.
 
-Where the Licensed Rights include Sui Generis Database Rights that apply to Your use of the Licensed Material:
+Where the Licensed Rights include Sui Generis Database Rights that apply to Your use of the Licensed Material, the following conditions apply, in addition to those above.
 
-a. for the avoidance of doubt, Section 2(a)(1) grants You the right to extract, reuse, reproduce, and Share all or a substantial portion of the contents of the database for NonCommercial purposes only and
+a. For the avoidance of doubt, Section 2(a)(1) grants You the right to extract, reuse, reproduce, and Share all or a substantial portion of the contents of the database for NonCommercial purposes only.
 
-b. if You include all or a substantial portion of the database contents in a database in which You have Sui Generis Database Rights, then the database You license is Adapted Material; and
+b. If You include all or a substantial portion of the database contents in a database in which You have Sui Generis Database Rights, then the database in which You have Sui Generis Database Rights (but not its individual contents) is Adapted Material, including for purposes of Section 3(b).
 
-c. You must comply with the conditions in Section 3(a);
+c. You must comply with the conditions in Section 3(a) if You Share all or a substantial portion of the contents of the database.
 
-d. for the avoidance of doubt, Section 3(b) does not apply where You Share Adapted Material that is solely a database.
+For the avoidance of doubt, this Section 4 supplements and does not replace Your obligations under this Public License where the Licensed Rights include other Copyright and Similar Rights.
 
 Section 5 – Disclaimer of Warranties and Limitation of Liability.
 
-a. Unless otherwise separately undertaken by the Licensor, to the extent possible, the Licensor offers the Licensed Material as-is and as-available, and makes no representations or warranties of any kind concerning the Licensed Material, whether express, implied, statutory, or other, including without limitation warranties of title, merchantability, fitness for a particular purpose, non-infringement, absence of latent or other defects, accuracy, or the presence or absence of errors, whether or not known or discoverable. Where disclaimers of warranties are not allowed in full or in part, this disclaimer may not apply to You.
+a. UNLESS OTHERWISE SEPARATELY UNDERTAKEN BY THE LICENSOR, TO THE EXTENT POSSIBLE, THE LICENSOR OFFERS THE LICENSED MATERIAL AS-IS AND AS-AVAILABLE, AND MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND CONCERNING THE LICENSED MATERIAL, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHER. THIS INCLUDES, WITHOUT LIMITATION, WARRANTIES OF TITLE, MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, ABSENCE OF LATENT OR OTHER DEFECTS, ACCURACY, OR THE PRESENCE OR ABSENCE OF ERRORS, WHETHER OR NOT KNOWN OR DISCOVERABLE. WHERE DISCLAIMERS OF WARRANTIES ARE NOT ALLOWED IN FULL OR IN PART, THIS DISCLAIMER MAY NOT APPLY TO YOU.
 
-b. To the extent possible, in no event shall the Licensor be liable to You on any legal theory (including, without limitation, negligence) or otherwise for any direct, special, indirect, incidental, consequential, punitive, exemplary, or other losses, costs, expenses, or damages arising out of this Public License or use of the Licensed Material, even if the Licensor has been advised of the possibility of such losses, costs, expenses, or damages. Where a limitation of liability is not allowed in full or in part, this limitation may not apply to You.
+b. TO THE EXTENT POSSIBLE, IN NO EVENT WILL THE LICENSOR BE LIABLE TO YOU ON ANY LEGAL THEORY (INCLUDING, WITHOUT LIMITATION, NEGLIGENCE) OR OTHERWISE FOR ANY DIRECT, SPECIAL, INDIRECT, INCIDENTAL, CONSEQUENTIAL, PUNITIVE, EXEMPLARY, OR OTHER LOSSES, COSTS, EXPENSES, OR DAMAGES ARISING OUT OF THIS PUBLIC LICENSE OR USE OF THE LICENSED MATERIAL, EVEN IF THE LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH LOSSES, COSTS, EXPENSES, OR DAMAGES. WHERE A LIMITATION OF LIABILITY IS NOT ALLOWED IN FULL OR IN PART, THIS LIMITATION MAY NOT APPLY TO YOU.
 
-c. The disclaimer of warranties and limitation of liability provided in this Section 5 shall be interpreted in a manner that, to the extent possible, most closely approximates the absolute disclaimer and waiver of all liability.
+c. The disclaimer of warranties and limitation of liability provided above shall be interpreted in a manner that, to the extent possible, most closely approximates an absolute disclaimer and waiver of all liability.
 
 Section 6 – Term and Termination.
 
@@ -113,7 +118,6 @@ a. This Public License applies for the term of the Copyright and Similar Rights 
 b. Where Your right to use the Licensed Material has terminated under Section 6(a), it reinstates:
 
     1. automatically as of the date the violation is cured, provided it is cured within 30 days of Your discovery of the violation; or
-
     2. upon express reinstatement by the Licensor.
 
 For the avoidance of doubt, this Section 6(b) does not affect any right the Licensor may have to seek remedies for Your violations of this Public License.
@@ -126,22 +130,14 @@ Section 7 – Other Terms and Conditions.
 
 a. The Licensor shall not be bound by any additional or different terms or conditions communicated by You unless expressly agreed.
 
-b. Any arrangements, understandings, or agreements regarding the Licensed Material that are not stated herein are separate from and independent of the terms and conditions of this Public License.
+b. Any arrangements, understandings, or agreements regarding the Licensed Material not stated herein are separate from and independent of the terms and conditions of this Public License.
 
 Section 8 – Interpretation.
 
 a. For the avoidance of doubt, this Public License does not, and shall not be interpreted to, reduce, limit, restrict, or impose conditions on any use of the Licensed Material that could lawfully be made without permission under this Public License.
 
-b. To the extent possible, if any provision of this Public License is determined to be unenforceable, it shall be automatically reformed to the minimum extent necessary to make the provision enforceable. If the provision cannot be reformed, it shall be severed from this Public License without affecting the enforceability of the remaining terms and conditions.
+b. To the extent possible, if any provision of this Public License is determined to be unenforceable, it shall be automatically reformed to the minimum extent necessary to make it enforceable. If the provision cannot be reformed, it shall be severed from this Public License without affecting the enforceability of the remaining terms and conditions.
 
-c. No term or condition of this Public License will be waived unless expressly agreed to by the Licensor.
+c. No term or condition of this Public License will be waived and no failure to comply consented to unless expressly agreed to by the Licensor.
 
-d. Nothing in this Public License constitutes or may be construed as a suggestion, recommendation, invitation, or endorsement to take any particular action with respect to the Licensed Material.
-
-e. This Public License is offered as a standalone instrument as well as in conjunction with other Creative Commons public licenses. For the avoidance of doubt, the human-readable summary and URI for this Public License are part of this Public License.
-
-Creative Commons is not a party to this Public License, and makes no warranty whatsoever in connection with the Licensed Material. Creative Commons makes its public licenses available free of charge. By dedicating its works to the public domain under a Creative Commons CC0 public domain dedication, Creative Commons waives all of its rights in those works worldwide under copyright law, including all related and neighboring rights, to the extent allowed by law.
-
-Except for the limited purpose of indicating that the Licensed Material is shared under a Creative Commons public license, Creative Commons does not authorize the use of the trademark “Creative Commons” or any other trademark or logo of Creative Commons without its prior written consent including, without limitation, in connection with any unauthorized modifications to the Licensed Material or for any other purpose.
-
-Public License | Attribution-NonCommercial-ShareAlike 4.0 International | CC BY-NC-SA 4.0
+d. Nothing in this Public License constitutes or may be construed as permission to assert or imply that You are, or that Your use of the Licensed Material is, connected with, or sponsored, endorsed, or granted official status by, the Licensor or others designated to receive attribution as provided in Section 3(a)(1)(A)(i).
