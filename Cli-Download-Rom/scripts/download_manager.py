@@ -89,7 +89,7 @@ def _handle_insufficient_space(required_bytes):
         else:
             print(f"   ⚠️ {t.get_string('ERROR_INVALID_CHOICE')}")
 
-def download_rom(rom_details, preferred_mirror):
+def download_rom(rom_details, preferred_mirror, destination_folder=None):
     """Gerencia o download de uma ROM usando aria2c com opções customizadas."""
     try:
         aria2 = _get_aria2_client()
@@ -106,7 +106,10 @@ def download_rom(rom_details, preferred_mirror):
     
     base_rom_path = Path(__file__).parent.parent / config['general']['roms_directory']
     temp_download_path = Path(__file__).parent.parent / config['general']['temp_directory'] / 'downloads'
-    final_rom_dir = base_rom_path / platform
+    if destination_folder:
+        final_rom_dir = base_rom_path / destination_folder
+    else:
+        final_rom_dir = base_rom_path / platform
     
     final_rom_dir.mkdir(parents=True, exist_ok=True)
     temp_download_path.mkdir(parents=True, exist_ok=True)
