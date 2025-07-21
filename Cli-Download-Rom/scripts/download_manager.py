@@ -9,34 +9,27 @@ from pathlib import Path
 from tqdm import tqdm
 from ..utils.localization import t
 from ..utils.config_loader import config
-from ..utils.dependency_checker import _is_command_installed
-
-success_logger = logging.getLogger('success_logger')
-
-# Variáveis globais para gerenciar o cliente e o processo do aria2c
-aria2_client = None
-aria2_process = None
+from ..utils.dependency_checker import _is_command_installed, _get_aria2c_executable_name
 
 def _get_aria2c_path():
-    """Encontra o caminho para o executável do aria2c."""
-    local_path = Path(__file__).parent.parent / 'bin' / 'aria2c.exe'
+    """Encontra o caminho para o executável multiplataforma do aria2c."""
+    executable_name = _get_aria2c_executable_name()
+    local_path = Path(__file__).parent.parent / 'bin' / executable_name
     if local_path.exists():
         return str(local_path)
-    if _is_command_installed('aria2c'):
-        return 'aria2c'
+    if _is_command_installed(executable_name):
+        return executable_name
     return None
 
-def _shutdown_aria2c():
-    """Função para ser chamada na saída do programa para garantir que o aria2c seja encerrado."""
+def _get_aria2_client():
+    """Inicia o servidor aria2c se necessário e retorna um cliente conectado."""
     global aria2_client, aria2_process
     if aria2_client:
-        try:
-            aria2_client.shutdown()
-            logging.info("Servidor aria2c desligado via RPC.")
-        except Exception:
-            if aria2_process and aria2_process.poll() is None:
-                aria2_process.terminate()
-                logging.info("Processo aria2c terminado forçadamente.")
+        return aria2_client
+
+    aria2c_path = _get_aria2c_path()
+    if not aria2c_path:
+        raise FileNotFoundError("aria2c não pôde ser encontrado.")
 
 def _get_aria2_client():
     """Inicia o servidor aria2c se necessário e retorna um cliente conectado."""

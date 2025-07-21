@@ -107,3 +107,5 @@ CLONING_REPO_FAILED = "Failed to download the '{}' repository. Check your connec
 ARIA2C_AUTOINSTALL_START = "aria2c not found. Attempting to download and install locally..."
 ARIA2C_AUTOINSTALL_SUCCESS = "aria2c successfully installed to the local 'bin' folder."
 ARIA2C_AUTOINSTALL_FAILED = "Failed to install aria2c automatically. Please install it manually and add it to your PATH."
+ERROR_ARIA2C_LINUX_INSTRUCTIONS = "Please install it using your distribution's package manager (e.g., sudo apt-get install aria2)."
+ERROR_ARIA2C_MACOS_INSTRUCTIONS = "Please install it using Homebrew (brew install aria2)."
