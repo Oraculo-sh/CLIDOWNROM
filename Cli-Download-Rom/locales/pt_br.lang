@@ -136,3 +136,11 @@ info_download_cancelled = "Download cancelado."
 input_prompt_select_rom = "> "
 info_updating_platforms = "A atualizar a lista de plataformas a partir da API..."
 info_updating_regions = "A atualizar a lista de regiões a partir da API..."
+
+# Altere esta linha existente
+search_select_prompt = "Digite os números para baixar (ex: 1, 3, 5) ou 'c' para cancelar."
+
+# Adicione estas novas linhas
+info_starting_download_queue = "A iniciar o download de {count} ROM(s)..."
+error_invalid_input_list = "Seleção inválida. Por favor, use apenas números separados por vírgula (ex: 1, 3, 5)."
+log_download_queue_created = "Fila de download criada para os índices: {indices}"
