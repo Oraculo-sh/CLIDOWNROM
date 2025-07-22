@@ -1,8 +1,9 @@
 requests
-tqdm
 PyYAML
 python-dotenv
 unidecode
-aria2p
 colorama
-requests-cache
+tqdm
+aria2p
+prompt-toolkit
+Levenshtein

@@ -1,10 +1,18 @@
+# ---- Cli-Download-Rom Dependencies ----
+
+# Core libraries for HTTP requests and configuration
 requests
-requests-cache
-tqdm
 PyYAML
 python-dotenv
-unidecode
-aria2p
+
+# Shell interface and user experience
 colorama
-prompt
 prompt-toolkit
+
+# Download manager
+tqdm
+aria2p
+
+# String and text utilities
+unidecode
+python-Levenshtein
