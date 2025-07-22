@@ -144,3 +144,13 @@ search_select_prompt = "Digite os números para baixar (ex: 1, 3, 5) ou 'c' para
 info_starting_download_queue = "A iniciar o download de {count} ROM(s)..."
 error_invalid_input_list = "Seleção inválida. Por favor, use apenas números separados por vírgula (ex: 1, 3, 5)."
 log_download_queue_created = "Fila de download criada para os índices: {indices}"
+
+# Novas mensagens para o shell interativo
+welcome_interactive_mode = "Bem-vindo ao modo interativo do Cli-Download-Rom."
+interactive_mode_hint = "Use TAB para autocompletar. Digite 'exit' ou 'help' para mais informações."
+usage_interactive_prompt = "Uso: search <termo> [-p PLATAFORMA] [-r REGIAO]"
+goodbye_message = "Até logo!"
+
+# Novas mensagens de log e erro
+log_command_error = "Erro ao processar o comando: {error}"
+error_command_failed = "Ocorreu um erro ao executar o comando."

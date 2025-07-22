@@ -1,23 +1,35 @@
-﻿import sys
-import argparse
+﻿from core.shell import start_interactive_shell
+from core.commands import handle_search
+from utils.localization import _
+from utils.logging_config import setup_logging
 
-from .core.parser import get_parser
-from .core.shell import InteractiveShell
-from .core.commands import handle_search, handle_download, handle_download_list
+log = setup_logging()
 
-def start():
-    """Ponto de entrada que decide entre o modo CLI Padrão e o Shell Interativo."""
-    parser = get_parser()
+def handle_command(user_input, parser, config):
+    """
+    Função intermediária que processa um comando (do shell ou da CLI).
+    """
+    try:
+        args = parser.parse_args(user_input.split())
+        if args.search_key:
+            handle_search(args, config)
+        else:
+            print(_("usage_interactive_prompt"))
+    except SystemExit:
+        pass
+    except Exception as e:
+        log.error(_("log_command_error").format(error=e))
+        print(_("error_command_failed"))
+
+
+def main_cli(parser, config):
+    """
+    Ponto de entrada principal para a CLI.
+    Decide se entra no modo interativo ou executa um comando direto.
+    """
+    import sys
     if len(sys.argv) > 1:
-        try:
-            args = parser.parse_args()
-            if hasattr(args, 'command') and args.command:
-                if args.command == 'search': handle_search(args)
-                elif args.command == 'download': handle_download(args)
-                elif args.command == 'download-list': handle_download_list(args)
-            else:
-                parser.print_help()
-        except argparse.ArgumentError:
-             parser.print_help()
+        user_input = " ".join(sys.argv[1:])
+        handle_command(user_input, parser, config)
     else:
-        InteractiveShell(parser).cmdloop()
+        start_interactive_shell(parser, config, handle_command)
