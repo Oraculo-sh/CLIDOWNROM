@@ -63,5 +63,5 @@ def check_system_dependencies():
             print(f"   {t.get_string('ERROR_ARIA2C_MACOS_INSTRUCTIONS')}")
             sys.exit(1)
         else:
-            print(f"❌ Sistema operacional '{sys.platform}' não suportado para instalação automática do aria2c.")
+            print(f"❌ {t.get_string('UNSUPPORTED_OS_FOR_ARIA2C_INSTALL', sys.platform)}")
             sys.exit(1)

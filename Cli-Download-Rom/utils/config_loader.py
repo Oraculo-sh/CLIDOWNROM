@@ -8,10 +8,10 @@ def load_config():
             config = yaml.safe_load(f)
         return config
     except FileNotFoundError:
-        print("ERRO: Ficheiro 'config.yml' não foi encontrado!")
+        print("ERROR: 'config.yml' file not found!")
         return None
     except yaml.YAMLError as e:
-        print(f"ERRO ao ler o ficheiro de configuração: {e}")
+        print(f"ERROR reading config file: {e}")
         return None
 
 config = load_config()

@@ -7,12 +7,10 @@ CACHE_DIR = Path(__file__).parent.parent / config['general']['temp_directory'] /
 CACHE_EXPIRY_SECONDS = 3600  # 1 hora
 
 def _get_cache_filepath(payload):
-    # Cria um nome de ficheiro a partir do payload da busca
     search_key = payload.get('search_key', '')
     platforms = "_".join(sorted(payload.get('platforms', [])))
     regions = "_".join(sorted(payload.get('regions', [])))
     filename = f"{search_key}_{platforms}_{regions}.json"
-    # Remove caracteres inválidos para nomes de ficheiro
     filename = "".join([c for c in filename if c.isalnum() or c in (' ', '_', '-')]).rstrip()
     return CACHE_DIR / filename
 
