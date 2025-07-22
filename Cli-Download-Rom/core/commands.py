@@ -1,3 +1,10 @@
+from ..scripts.crocdb_api_handler import search_roms
+from ..scripts.download_manager import download_rom
+from ..utils.localization import _
+from ..utils.logging_config import setup_logging
+from .parser import rank_results
+from ..ui.display import display_search_results
+
 def handle_search(args, config):
     """
     Lida com o comando de busca, exibe os resultados e processa a seleção de downloads.

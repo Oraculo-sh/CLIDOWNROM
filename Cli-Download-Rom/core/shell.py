@@ -1,8 +1,8 @@
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from ui.completer import CliCompleter
-from utils.localization import _
+from ..ui.completer import CliCompleter
+from ..utils.localization import _
 import os
 
 def start_interactive_shell(parser, config, handle_command_func):

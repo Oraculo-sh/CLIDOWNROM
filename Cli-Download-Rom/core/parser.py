@@ -1,9 +1,9 @@
 import argparse
 from Levenshtein import distance
-from utils.localization import _
-from utils.logging_config import setup_logging
-from scripts.api_cache import load_from_cache, save_to_cache
-from scripts.crocdb_api_handler import get_platforms, get_regions
+from ..utils.localization import _
+from ..utils.logging_config import setup_logging
+from ..scripts.api_cache import load_from_cache, save_to_cache
+from ..scripts.crocdb_api_handler import get_platforms, get_regions
 
 log = setup_logging()
 

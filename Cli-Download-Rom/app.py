@@ -1,10 +1,10 @@
 import sys
-from utils.config_loader import load_config
-from utils.logging_config import setup_logging
-from core.parser import create_parser
-from core.shell import start_interactive_shell
-from core.commands import handle_search
-from utils.localization import _, load_language
+from .utils.config_loader import load_config
+from .utils.logging_config import setup_logging
+from .core.parser import create_parser
+from .core.shell import start_interactive_shell
+from .core.commands import handle_search
+from .utils.localization import _, load_language
 
 class App:
     def __init__(self):
