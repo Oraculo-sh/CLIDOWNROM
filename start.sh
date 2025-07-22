@@ -1,13 +1,13 @@
 #!/bin/bash
 
-VENV_DIR="venv"
+VENV_DIR=".venv"
 REQUIREMENTS_FILE="requirements.txt"
 MODULE_NAME="Cli-Download-Rom"
 
-echo "Verificando ambiente Python..."
+echo "Checking Python environment..."
 
 if [ ! -d "$VENV_DIR" ]; then
-    echo "Criando ambiente virtual..."
+    echo "Creating virtual environment..."
     python3 -m venv "$VENV_DIR"
     if [ $? -ne 0 ]; then
         echo "ERRO: Falha ao criar o ambiente virtual."
@@ -17,14 +17,14 @@ fi
 
 source "$VENV_DIR/bin/activate"
 
-echo "Verificando e instalando dependências..."
+echo "Checking and installing dependencies..."
 pip install -r "$REQUIREMENTS_FILE" --quiet
 if [ $? -ne 0 ]; then
-    echo "ERRO: Falha ao instalar as dependências."
+    echo "ERROR: Failed to install dependencies."
     exit 1
 fi
 
-echo "Iniciando a aplicação..."
+echo "Starting the application..."
 echo ""
 
 python3 -m "$MODULE_NAME" "$@"

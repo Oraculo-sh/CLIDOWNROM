@@ -1,7 +1,7 @@
-@echo off
+﻿@echo off
 setlocal
 
-set VENV_DIR=venv
+set VENV_DIR=.venv
 set REQUIREMENTS_FILE=requirements.txt
 set MODULE_NAME=Cli-Download-Rom
 
@@ -11,7 +11,7 @@ if not exist "%VENV_DIR%\" (
     echo Criando ambiente virtual...
     python -m venv "%VENV_DIR%"
     if %errorlevel% neq 0 (
-        echo ERRO: Falha ao criar o ambiente virtual. Verifique se o Python esta instalado e no PATH.
+        echo ERROR: Failed to create the virtual environment.
         pause
         exit /b 1
     )
@@ -19,15 +19,15 @@ if not exist "%VENV_DIR%\" (
 
 call "%VENV_DIR%\Scripts\activate.bat"
 
-echo Verificando e instalando dependencias...
+echo Checking and installing dependencies...
 pip install -r "%REQUIREMENTS_FILE%" --quiet
 if %errorlevel% neq 0 (
-    echo ERRO: Falha ao instalar as dependencias.
+    echo ERROR: Failed to install dependencies.
     pause
     exit /b 1
 )
 
-echo Iniciando a aplicacao...
+echo Starting the application...
 echo.
 
 python -m %MODULE_NAME% %*
