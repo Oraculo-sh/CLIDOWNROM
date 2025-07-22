@@ -1,0 +1,39 @@
+name: Python Linter
+
+on:
+  push:
+    branches: [ "main" ] 
+  pull_request:
+    branches: [ "main" ] 
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11' 
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black
+
+    - name: Lint with flake8
+      run: |
+        # Para de dar erro se encontrar algum erro de Python, mas mostra-os.
+        # --count mostra o número total de erros.
+        # --show-source mostra o código com o erro.
+        # --statistics mostra a contagem de cada tipo de erro.
+        flake8 . --count --show-source --statistics
+        
+    - name: Check formatting with black
+      run: |
+        black --check .
