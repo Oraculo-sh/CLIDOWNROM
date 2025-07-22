@@ -118,3 +118,19 @@ log_request_timeout = "Timeout na requisição para: {url}"
 log_connection_error = "Erro de conexão ao tentar aceder: {url}"
 log_http_error = "Erro HTTP {status_code} ao aceder: {url}"
 log_unexpected_error = "Erro inesperado na requisição para {url}: {error}"
+
+# Novas mensagens para a exibição em tabela
+table_header_title = "Título"
+table_header_platform = "Plataforma"
+table_header_regions = "Regiões"
+search_results_title = "Resultados da Busca:"
+search_select_prompt = "Digite o número do jogo para baixar (ou 'c' para cancelar)."
+search_no_results = "Nenhum resultado encontrado."
+
+# Mensagens de log e de estado
+log_performing_search = "A realizar busca por '{term}' [Plataformas: {platforms}, Regiões: {regions}]"
+log_rom_selected = "ROM selecionada para download: '{title}' (Índice: {index})"
+error_search_failed = "Ocorreu um erro ao realizar a busca. A resposta da API foi inválida."
+error_invalid_selection = "Seleção inválida. Por favor, digite um número da lista."
+info_download_cancelled = "Download cancelado."
+input_prompt_select_rom = "> "
