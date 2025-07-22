@@ -103,3 +103,18 @@ LOG_BOXART_DOWNLOAD_FAILED = "Não foi possível baixar a boxart para '{}': {}"
 # Erros do ponto de entrada principal
 ERROR_CRITICAL_FAILURE = "Ocorreu um erro crítico. Verifique 'crash.log' para detalhes."
 LOG_UNHANDLED_CRITICAL_ERROR = "Ocorreu um erro crítico e não tratado no fluxo principal da aplicação."
+
+# Novas mensagens para o crocdb_api_handler
+error_request_timeout = "Erro: A requisição para a API demorou muito para responder. Verifique a sua conexão com a internet."
+error_connection_error = "Erro: Não foi possível conectar-se à API. Verifique a sua conexão com a internet ou se o serviço está online."
+error_http_error = "Erro: A API retornou um erro inesperado (Código: {status_code})."
+error_unexpected_request_error = "Erro: Ocorreu um problema inesperado ao tentar comunicar com a API."
+
+# Novas mensagens de log (não precisam de tradução para outros idiomas se forem apenas para debug)
+log_making_request = "A fazer requisição {method} para: {url}"
+log_request_payload = "Payload da requisição: {data}"
+log_request_successful = "Requisição para {url} bem-sucedida."
+log_request_timeout = "Timeout na requisição para: {url}"
+log_connection_error = "Erro de conexão ao tentar aceder: {url}"
+log_http_error = "Erro HTTP {status_code} ao aceder: {url}"
+log_unexpected_error = "Erro inesperado na requisição para {url}: {error}"

@@ -1,74 +1,74 @@
 import requests
-import logging
-from ..utils.config_loader import config
-from ..utils.localization import t
-from .api_cache import get_cached_search, save_search_to_cache
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+from utils.localization import _
+from utils.logging_config import setup_logging
 
-class CrocDBAPIHandler:
-    def __init__(self):
-        if not config:
-            raise ValueError("Configuração não carregada.")
-        self.base_url = config['api']['crocdb_api_url']
+log = setup_logging()
 
-    def search_rom(self, query, platforms=None, regions=None):
-        search_url = f"{self.base_url}/search"
-        payload = {
-            "search_key": query or "", "platforms": platforms or [],
-            "regions": regions or [], "max_results": 100
-        }
-        
-        # Verifica o cache primeiro
-        cached_data = get_cached_search(payload)
-        if cached_data:
-            logging.info("Resultados da busca encontrados no cache.")
-            return cached_data
+retry_strategy = Retry(
+    total=3,  
+    status_forcelist=[429, 500, 502, 503, 504], 
+    backoff_factor=1 
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
+http_session = requests.Session()
+http_session.mount("https://", adapter)
+http_session.mount("http://", adapter)
 
-        all_results, current_page, total_pages = [], 1, 1
-        max_pages = config['api'].get('max_search_pages', 5)
-        logging.info(t.get_string("API_SEARCH_ATTEMPT", query, search_url))
+def _make_request(method, url, json_data=None, timeout=10):
+    """
+    Função centralizada para fazer requisições HTTP com tratamento de erros e retentativas.
+    """
+    try:
+        log.info(_("log_making_request").format(method=method.upper(), url=url))
+        if json_data:
+            log.debug(_("log_request_payload").format(data=json_data))
 
-        while current_page <= total_pages and current_page <= max_pages:
-            payload["page"] = current_page
-            logging.info(f"Buscando página {current_page}...")
-            try:
-                response = requests.post(search_url, json=payload, timeout=20)
-                response.raise_for_status()
-                response_data, data = response.json(), response_data.get('data', {})
-                results = data.get('results', [])
-                if not results: break
-                all_results.extend(results)
-                if current_page == 1: total_pages = data.get('total_pages', 1)
-                current_page += 1
-            except Exception as e:
-                logging.error(t.get_string("API_REQUEST_ERROR", search_url, e)); return None
-        
-        if not all_results: logging.warning(t.get_string("API_SEARCH_NO_RESULTS", query)); return []
-        
-        logging.info(t.get_string("API_SEARCH_SUCCESS", len(all_results), query))
-        save_search_to_cache(payload, all_results) # Salva o resultado final no cache
-        return all_results
+        response = http_session.request(method, url, json=json_data, timeout=timeout)
+        response.raise_for_status() 
 
-    def get_rom_details(self, identifier, by='slug'):
-        payload = {by: identifier}
-        if by not in ['slug', 'rom_id']: return None
-        
-        # Busca por rom_id é feita no endpoint /search
-        url = f"{self.base_url}/search" if by == 'rom_id' else f"{self.base_url}/entry"
+        log.info(_("log_request_successful").format(url=url))
+        return response.json()
 
-        logging.info(t.get_string("API_DETAILS_ATTEMPT", identifier, url))
-        try:
-            response = requests.post(url, json=payload, timeout=15)
-            response.raise_for_status()
-            data = response.json().get('data', {})
-            
-            if by == 'rom_id':
-                # A resposta do /search é uma lista
-                entry_details = data.get('results', [{}])[0] if data.get('results') else None
-            else: # by slug
-                entry_details = data.get('entry')
+    except requests.exceptions.Timeout:
+        log.error(_("log_request_timeout").format(url=url))
+        print(f"\n{_('error_request_timeout')}")
+        return None
+    except requests.exceptions.ConnectionError:
+        log.error(_("log_connection_error").format(url=url))
+        print(f"\n{_('error_connection_error')}")
+        return None
+    except requests.exceptions.HTTPError as http_err:
+        log.error(_("log_http_error").format(status_code=http_err.response.status_code, url=url))
+        print(f"\n{_('error_http_error').format(status_code=http_err.response.status_code)}")
+        return None
+    except requests.exceptions.RequestException as err:
+        log.critical(_("log_unexpected_error").format(error=err, url=url))
+        print(f"\n{_('error_unexpected_request_error')}")
+        return None
 
-            if not entry_details: return None
-            logging.info(t.get_string("API_DETAILS_SUCCESS", entry_details.get('title', identifier)))
-            return entry_details
-        except Exception as e:
-            logging.error(t.get_string("API_UNEXPECTED_ERROR", "get_rom_details", e)); return None
+def search_roms(api_url, search_key, platforms=None, regions=None, max_results=100, page=1):
+    """
+    Busca ROMs na API CrocDB.
+    """
+    search_payload = {
+        "search_key": search_key,
+        "platforms": platforms or [],
+        "regions": regions or [],
+        "max_results": max_results,
+        "page": page
+    }
+    return _make_request("POST", f"{api_url}/search", json_data=search_payload)
+
+def get_platforms(api_url):
+    """
+    Obtém a lista de plataformas disponíveis.
+    """
+    return _make_request("GET", f"{api_url}/platforms")
+
+def get_regions(api_url):
+    """
+    Obtém a lista de regiões disponíveis.
+    """
+    return _make_request("GET", f"{api_url}/regions")
