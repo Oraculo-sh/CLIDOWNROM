@@ -1,30 +1,35 @@
 #!/bin/bash
+printf "\033]0;Cli-Download-Rom\007"
 
-VENV_DIR=".venv"
-REQUIREMENTS_FILE="requirements.txt"
-MODULE_NAME="Cli-Download-Rom"
+cd "$(dirname "$0")"
 
-echo "Checking Python environment..."
-
-if [ ! -d "$VENV_DIR" ]; then
-    echo "Creating virtual environment..."
-    python3 -m venv "$VENV_DIR"
-    if [ $? -ne 0 ]; then
-        echo "ERRO: Falha ao criar o ambiente virtual."
-        exit 1
-    fi
-fi
-
-source "$VENV_DIR/bin/activate"
-
-echo "Checking and installing dependencies..."
-pip install -r "$REQUIREMENTS_FILE" --quiet
-if [ $? -ne 0 ]; then
-    echo "ERROR: Failed to install dependencies."
-    exit 1
-fi
-
-echo "Starting the application..."
+echo "Cli-Download-Rom"
 echo ""
 
-python3 -m "$MODULE_NAME" "$@"
+if [ ! -d ".venv" ]; then
+    echo "Criando ambiente virtual (.venv) pela primeira vez..."
+    if command -v python3 &> /dev/null; then
+        python3 -m venv .venv
+    elif command -v python &> /dev/null; then
+        python -m venv .venv
+    else
+        echo "ERRO: O 'python' ou 'python3' nao foi encontrado."
+        echo "Nao foi possivel criar o ambiente virtual."
+        exit 1
+    fi
+    echo "Ambiente criado com sucesso."
+fi
+
+source ".venv/bin/activate"
+
+echo ""
+echo "Verificando e instalando dependencias no ambiente virtual..."
+pip install -r requirements.txt
+
+echo ""
+echo "Iniciando a aplicacao..."
+echo ""
+
+python -m Cli-Download-Rom "$@"
+
+deactivate
