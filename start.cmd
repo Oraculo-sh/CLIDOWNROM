@@ -7,28 +7,28 @@ echo Cli-Download-Rom
 echo.
 
 if not exist ".venv" (
-    echo Criando ambiente virtual (.venv) pela primeira vez...
+    echo Creating virtual environment .venv for the first time...
     python -m venv .venv >nul 2>nul
     if %errorlevel% neq 0 (
         python3 -m venv .venv >nul 2>nul
         if %errorlevel% neq 0 (
-            echo ERRO: Nao foi possivel criar o ambiente virtual.
-            echo Verifique se o Python esta instalado e se o modulo 'venv' esta disponivel.
+            echo ERROR: Could not create the virtual environment.
+            echo Please make sure Python is installed and the 'venv' module is available.
             pause
             exit /b 1
         )
     )
-    echo Ambiente criado com sucesso.
+    echo Environment created successfully.
 )
 
 call ".venv\Scripts\activate.bat"
 
 echo.
-echo Verificando e instalando dependencias no ambiente virtual...
+echo Checking and installing dependencies in the virtual environment...
 pip install -r requirements.txt
 
 echo.
-echo Iniciando a aplicacao...
+echo Starting the application...
 echo.
 
 python -m Cli-Download-Rom %*
