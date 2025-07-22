@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 setlocal
 
 set VENV_DIR=.venv
