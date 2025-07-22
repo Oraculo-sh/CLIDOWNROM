@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./Cli-Download-Rom"
+    ],
+    "python.defaultInterpreterPath": "./venv/Scripts/python.exe"
+}
