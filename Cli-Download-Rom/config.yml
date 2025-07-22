@@ -18,3 +18,8 @@ mirrors:
 updates:
   check_tool_update_on_startup: true
   tool_repository_url: "https://github.com/Oraculo-adm/CLIDOWNROM"
+
+cache:
+  platforms_cache_file: "cache/platforms.json"
+  regions_cache_file: "cache/regions.json"
+  cache_duration_hours: 24

@@ -134,3 +134,5 @@ error_search_failed = "Ocorreu um erro ao realizar a busca. A resposta da API fo
 error_invalid_selection = "Seleção inválida. Por favor, digite um número da lista."
 info_download_cancelled = "Download cancelado."
 input_prompt_select_rom = "> "
+info_updating_platforms = "A atualizar a lista de plataformas a partir da API..."
+info_updating_regions = "A atualizar a lista de regiões a partir da API..."
