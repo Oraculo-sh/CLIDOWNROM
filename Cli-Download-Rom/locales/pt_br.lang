@@ -1,4 +1,4 @@
-# === Geral & Setup ===
+﻿# === Geral & Setup ===
 APP_DESCRIPTION = "Ferramenta de linha de comando para baixar ROMs via API CrocDB."
 LOGGING_SYSTEM_SETUP = "Sistema de logs configurado."
 DIR_STRUCTURE_CHECK = "⌁ Verificando estrutura de diretórios..."

@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import sys
 from dotenv import load_dotenv
 

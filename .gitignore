@@ -1,5 +1,6 @@
 # Ambiente Virtual e Cache do Python
 venv/
+.venv/
 __pycache__/
 *.pyc
 
