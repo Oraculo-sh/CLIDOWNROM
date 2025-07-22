@@ -7,27 +7,27 @@ echo "Cli-Download-Rom"
 echo ""
 
 if [ ! -d ".venv" ]; then
-    echo "Criando ambiente virtual (.venv) pela primeira vez..."
+    echo "Creating virtual environment (.venv) for the first time..."
     if command -v python3 &> /dev/null; then
         python3 -m venv .venv
     elif command -v python &> /dev/null; then
         python -m venv .venv
     else
-        echo "ERRO: O 'python' ou 'python3' nao foi encontrado."
-        echo "Nao foi possivel criar o ambiente virtual."
+        echo "ERROR: 'python' or 'python3' was not found."
+        echo "Could not create the virtual environment."
         exit 1
     fi
-    echo "Ambiente criado com sucesso."
+    echo "Environment created successfully."
 fi
 
 source ".venv/bin/activate"
 
 echo ""
-echo "Verificando e instalando dependencias no ambiente virtual..."
+echo "Checking and installing dependencies in the virtual environment..."
 pip install -r requirements.txt
 
 echo ""
-echo "Iniciando a aplicacao..."
+echo "Starting the application..."
 echo ""
 
 python -m Cli-Download-Rom "$@"
