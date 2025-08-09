@@ -182,6 +182,12 @@ Thumbs.db
 *.swo
 *~
 
+# Distribution packages
+*.zip
+*.tar.gz
+*.tar.bz2
+CLIDOWNROM-*.zip
+
 # Executables
 *.exe
 *.deb
