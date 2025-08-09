@@ -1,9 +1,0 @@
-requests
-PyYAML
-python-dotenv
-unidecode
-colorama
-tqdm
-aria2p
-prompt-toolkit
-Levenshtein
