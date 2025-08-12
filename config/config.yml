@@ -1,0 +1,42 @@
+api:
+  base_url: 'https://api.crocdb.net'
+  timeout: 30
+  max_retries: 3
+  retry_delay: 1
+
+download:
+  max_concurrent: 4
+  chunk_size: 8192
+  verify_downloads: true
+  download_boxart: true
+  preferred_hosts: []
+  timeout: 300
+
+cache:
+  enabled: true
+  ttl_hours: 24
+  max_size_mb: 100
+
+interface:
+  language: 'auto'
+  theme: 'default'
+  show_progress: true
+  confirm_downloads: true
+
+logging:
+  level: 'INFO'
+  file_enabled: true
+  console_enabled: true
+  max_log_files: 10
+  max_log_size_mb: 10
+
+directories:
+  roms: 'ROMS'
+  temp: 'TEMP'
+  logs: 'logs'
+  cache: 'cache'
+
+performance:
+  test_mirrors: true
+  mirror_test_timeout: 10
+  mirror_test_file_size: 1048576  # 1MB

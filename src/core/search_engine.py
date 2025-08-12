@@ -457,21 +457,21 @@ class SearchEngine:
         
         try:
             # Busca na API
-            search_result = await self.api_client.search_roms(
-                query=query,
+            search_result = self.api_client.search_entries(
+                search_key=query,
                 platforms=search_filter.platforms,
                 regions=search_filter.regions,
-                limit=limit * 2  # Busca mais para ter margem após filtros
+                max_results=limit * 2  # Busca mais para ter margem após filtros
             )
             
-            if not search_result.entries:
+            if not search_result or not search_result.results:
                 logger.info("Nenhum resultado encontrado")
                 return []
             
-            logger.info(f"Encontrados {len(search_result.entries)} resultados iniciais")
+            logger.info(f"Encontrados {len(search_result.results)} resultados iniciais")
             
             # Aplica filtros adicionais
-            filtered_entries = self._apply_filters(search_result.entries, search_filter)
+            filtered_entries = self._apply_filters(search_result.results, search_filter)
             
             logger.info(f"Após filtros: {len(filtered_entries)} resultados")
             

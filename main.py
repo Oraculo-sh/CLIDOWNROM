@@ -10,11 +10,12 @@ License: GPL-3.0
 """
 
 import sys
-import os
+import sys
 import argparse
 from pathlib import Path
+from loguru import logger
 
-# Add src directory to Python path
+# Add src to path for imports
 src_path = Path(__file__).parent / "src"
 sys.path.insert(0, str(src_path))
 
@@ -266,31 +267,29 @@ def initialize_application(args) -> tuple:
     directory_manager = DirectoryManager()
     
     # Initialize configuration manager
-    config_manager = ConfigManager(directory_manager)
-    if args.config:
-        config_manager.load_config(args.config)
+    config_manager = ConfigManager(args.config)
     
     # Override language if specified
     if args.language:
-        config_manager.set_value("app.language", args.language)
+        config_manager.set("interface", "language", args.language)
     
     # Initialize internationalization
-    language = config_manager.get_value("app.language", "en")
-    init_i18n(language, directory_manager.get_locales_dir())
+    language = config_manager.get("interface", "language", "en")
+    init_i18n(directory_manager.get_path('locales'), language)
     
     # Initialize logging
-    log_manager = LogManager(directory_manager, config_manager)
+    log_manager = LogManager(str(directory_manager.get_path('logs')))
     
     # Set debug/quiet modes
     if args.debug:
-        log_manager.set_level("DEBUG")
-        config_manager.set_value("logging.level", "DEBUG")
+        log_manager.setup_logging(level="DEBUG")
+        config_manager.set("logging", "level", "DEBUG")
     elif args.quiet:
-        log_manager.set_level("ERROR")
-        config_manager.set_value("logging.console_output", False)
+        log_manager.setup_logging(level="ERROR", console_enabled=False)
+        config_manager.set("logging", "console_enabled", False)
     
     # Log application start
-    log_manager.log_app_start(get_version_string())
+    logger.info(f"CLI Download ROM iniciado - {get_version_string()}")
     
     return config_manager, directory_manager, log_manager
 
@@ -322,7 +321,7 @@ def main():
             
             if args.command:
                 # Execute specific command
-                exit_code = interface.run_command(args.command, args)
+                exit_code = interface.run(sys.argv[1:])
                 sys.exit(exit_code)
             else:
                 # No command specified, show help

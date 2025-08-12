@@ -1,0 +1,30 @@
+{
+  "search": {
+    "searching": "Buscando...",
+    "no_results": "Nenhum resultado encontrado.",
+    "found": {
+      "singular": "Encontrado {count} resultado",
+      "plural": "Encontrados {count} resultados"
+    },
+    "query": "Consulta de Busca",
+    "platform": "Plataforma",
+    "region": "Região"
+  },
+  "commands": {
+    "search": "Buscar",
+    "download": "Baixar",
+    "config": "Configuração"
+  },
+  "errors": {
+    "general": "Erro",
+    "invalid_input": "Entrada inválida"
+  },
+  "config": {
+    "invalid": "Chave de configuração inválida",
+    "saved": "Configuração salva",
+    "reset": "Configuração resetada para padrões"
+  },
+  "help": {
+    "usage": "Uso"
+  }
+}

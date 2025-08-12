@@ -892,7 +892,7 @@ class GUIInterface(QMainWindow):
         self.logger = log_manager
         
         # Initialize API client
-        api_config = self.config.get('api', {})
+        api_config = self.config.get('api', {}) or {}
         self.api_client = CrocDBClient(
             base_url=api_config.get('base_url'),
             timeout=api_config.get('timeout', 30),
@@ -900,11 +900,11 @@ class GUIInterface(QMainWindow):
         )
         
         # Initialize search engine
-        self.search_engine = SearchEngine(self.api_client, self.config)
+        self.search_engine = SearchEngine(self.api_client)
         
         # Initialize download manager
         self.download_manager = DownloadManager(
-            self.config, self.dirs, self.logger
+            self.dirs
         )
         
         # Initialize gamepad manager
@@ -1098,8 +1098,9 @@ D-Pad - Navigate
         """Perform search in background thread."""
         def search_worker():
             try:
-                results = self.search_engine.search(query, search_filter, 50)
-                QTimer.singleShot(0, lambda: callback(results.entries))
+                import asyncio
+                results = asyncio.run(self.search_engine.search(query, search_filter, 50))
+                QTimer.singleShot(0, lambda: callback([rom.rom_entry for rom in results]))
             except Exception as e:
                 QTimer.singleShot(0, lambda: callback([]))
         

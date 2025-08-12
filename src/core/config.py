@@ -74,6 +74,7 @@ class ConfigManager:
         self.config_path = Path(config_path) if config_path else self._get_default_config_path()
         self.config = self.DEFAULT_CONFIG.copy()
         self.user_config_path = self._get_user_config_path()
+        self.load_config()
     
     def _get_default_config_path(self) -> Path:
         """Retorna o caminho padrão do arquivo de configuração."""

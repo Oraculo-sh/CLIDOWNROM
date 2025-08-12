@@ -116,7 +116,7 @@ class CrocDBClient:
             max_retries: Número máximo de tentativas
             retry_delay: Delay entre tentativas em segundos
         """
-        self.base_url = base_url.rstrip('/')
+        self.base_url = (base_url or "https://api.crocdb.net").rstrip('/')
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay

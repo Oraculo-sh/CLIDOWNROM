@@ -44,7 +44,7 @@ class CLIInterface:
         self.logger = log_manager
         
         # Initialize API client
-        api_config = self.config.get('api', {})
+        api_config = self.config.get('api', {}) or {}
         self.api_client = CrocDBClient(
             base_url=api_config.get('base_url'),
             timeout=api_config.get('timeout', 30),
@@ -52,11 +52,11 @@ class CLIInterface:
         )
         
         # Initialize search engine
-        self.search_engine = SearchEngine(self.api_client, self.config)
+        self.search_engine = SearchEngine(self.api_client)
         
         # Initialize download manager
         self.download_manager = DownloadManager(
-            self.config, self.dirs, self.logger
+            self.dirs
         )
         
         self.parser = self._create_parser()
@@ -360,27 +360,28 @@ class CLIInterface:
             # Create search filter
             search_filter = SearchFilter(
                 platforms=args.platform or [],
-                regions=args.region or [],
-                year=args.year
+                regions=args.region or []
             )
             
             print(f"{t('search.searching')}")
             
             # Perform search
-            results = self.search_engine.search(
+            import asyncio
+            results = asyncio.run(self.search_engine.search(
                 query=args.query,
                 search_filter=search_filter,
                 limit=args.limit
-            )
+            ))
             
-            if not results.entries:
+            if not results:
                 print(t('search.no_results'))
                 return 0
             
             # Display results
-            self._display_search_results(results.entries, args.format)
+            rom_entries = [rom.rom_entry for rom in results]
+            self._display_search_results(rom_entries, args.format)
             
-            print(f"\n{t('search.found.plural', count=len(results.entries))}")
+            print(f"\n{t('search.found.plural', count=len(results))}")
             return 0
             
         except Exception as e:
@@ -606,12 +607,11 @@ class CLIInterface:
         if format_type == 'json':
             import json
             data = [{
-                'id': rom.id,
+                'slug': rom.slug,
                 'title': rom.title,
                 'platform': rom.platform,
-                'region': rom.region,
-                'year': rom.year,
-                'size': rom.size
+                'regions': rom.regions,
+                'size_mb': rom.get_size_mb()
             } for rom in results]
             print(json.dumps(data, indent=2))
         
@@ -620,11 +620,13 @@ class CLIInterface:
             import io
             output = io.StringIO()
             writer = csv.writer(output)
-            writer.writerow(['ID', 'Title', 'Platform', 'Region', 'Year', 'Size'])
+            writer.writerow(['Slug', 'Title', 'Platform', 'Regions', 'Size (MB)'])
             for rom in results:
+                regions_str = ', '.join(rom.regions) if rom.regions else 'N/A'
+                size_mb = rom.get_size_mb()
+                size_str = f"{size_mb:.1f}" if size_mb > 0 else 'N/A'
                 writer.writerow([
-                    rom.id, rom.title, rom.platform, rom.region,
-                    rom.year or '', format_file_size(rom.size) if rom.size else ''
+                    rom.slug, rom.title, rom.platform, regions_str, size_str
                 ])
             print(output.getvalue().strip())
         
@@ -633,13 +635,14 @@ class CLIInterface:
             print(f"\n{'ID':<8} {'Title':<40} {'Platform':<15} {'Region':<8} {'Year':<6} {'Size':<10}")
             print("-" * 95)
             
-            for rom in results:
+            for i, rom in enumerate(results, 1):
                 title = rom.title[:37] + "..." if len(rom.title) > 40 else rom.title
                 platform = rom.platform[:12] + "..." if len(rom.platform) > 15 else rom.platform
-                size_str = format_file_size(rom.size) if rom.size else 'N/A'
-                year_str = str(rom.year) if rom.year else 'N/A'
+                size_mb = rom.get_size_mb()
+                size_str = f"{size_mb:.1f}MB" if size_mb > 0 else 'N/A'
+                region_str = rom.regions[0] if rom.regions else 'N/A'
                 
-                print(f"{rom.id:<8} {title:<40} {platform:<15} {rom.region:<8} {year_str:<6} {size_str:<10}")
+                print(f"{i:<8} {title:<40} {platform:<15} {region_str:<8} {'N/A':<6} {size_str:<10}")
     
     def _display_rom_info(self, rom, format_type: str) -> None:
         """

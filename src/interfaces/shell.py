@@ -62,7 +62,7 @@ class ShellInterface:
         self.cli = CLIInterface(config_manager, directory_manager, log_manager)
         
         # Initialize API client
-        api_config = self.config.get('api', {})
+        api_config = self.config.get('api', {}) or {}
         self.api_client = CrocDBClient(
             base_url=api_config.get('base_url'),
             timeout=api_config.get('timeout', 30),
@@ -70,11 +70,11 @@ class ShellInterface:
         )
         
         # Initialize search engine
-        self.search_engine = SearchEngine(self.api_client, self.config)
+        self.search_engine = SearchEngine(self.api_client)
         
         # Initialize download manager
         self.download_manager = DownloadManager(
-            self.config, self.dirs, self.logger
+            self.dirs
         )
         
         # Shell state
