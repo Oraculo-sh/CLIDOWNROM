@@ -37,9 +37,9 @@ class DirectoryManager:
             'temp_downloads': self.base_path / 'TEMP' / 'downloads',
             'temp_test': self.base_path / 'TEMP' / 'teste',
             'logs': self.base_path / 'logs',
-            'config': self.base_path / 'config',
+            'config': self.base_path / 'src' / 'config',
             'cache': self.base_path / 'cache',
-            'locales': self.base_path / 'locales'
+            'locales': self.base_path / 'src' / 'locales'
         }
     
     def ensure_directories(self) -> bool:
