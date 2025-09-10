@@ -10,7 +10,7 @@ License: GPL-3.0
 """
 
 import sys
-import sys
+import os
 import argparse
 from pathlib import Path
 from loguru import logger
@@ -71,8 +71,8 @@ def setup_argument_parser() -> argparse.ArgumentParser:
     # Language override
     parser.add_argument(
         "--language", "-l",
-        choices=["en", "pt"],
-        help="Language override (en/pt)"
+        choices=["auto", "en_us", "pt_br"],
+        help="Language override (auto/en_us/pt_br)"
     )
     
     # Debug mode
@@ -225,7 +225,7 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         "config",
         help="Manage configuration"
     )
-    config_group = config_parser.add_mutually_exclusive_group(required=True)
+    config_group = config_parser.add_mutually_exclusive_group(required=False)
     config_group.add_argument(
         "--get",
         help="Get configuration value"
@@ -274,8 +274,16 @@ def initialize_application(args) -> tuple:
         config_manager.set("interface", "language", args.language)
     
     # Initialize internationalization
-    language = config_manager.get("interface", "language", "en")
-    init_i18n(directory_manager.get_path('locales'), language)
+    from src.locales import get_i18n
+    language = config_manager.get("interface", "language", "auto")
+    # Always initialize with default fallback 'en_us'
+    init_i18n(directory_manager.get_path('locales'), 'en_us')
+    # If user/config specifies a fixed language (not auto), enforce it
+    if language and language != 'auto':
+        try:
+            get_i18n().set_language(language)
+        except Exception as e:
+            logger.warning(f"Failed to set configured language '{language}', using auto/system detection. Error: {e}")
     
     # Initialize logging
     log_manager = LogManager(str(directory_manager.get_path('logs')))
@@ -300,7 +308,7 @@ def main():
     try:
         # Parse command line arguments
         parser = setup_argument_parser()
-        args = parser.parse_args()
+        args, unknown = parser.parse_known_args()
         
         # Initialize application
         config_manager, directory_manager, log_manager = initialize_application(args)
@@ -318,14 +326,41 @@ def main():
         if args.interface == "cli":
             # CLI mode - handle commands directly
             interface = CLIInterface(config_manager, directory_manager, log_manager)
+
+            # Build argument list for CLIInterface
+            cli_args = []
+            if args.command == 'config':
+                # Map main-level flags to CLI subcommands for compatibility
+                if hasattr(args, 'list') and args.list:
+                    cli_args = ['config', 'list']
+                elif hasattr(args, 'reset') and args.reset:
+                    cli_args = ['config', 'reset']
+                elif hasattr(args, 'get') and args.get:
+                    cli_args = ['config', 'get', args.get]
+                elif hasattr(args, 'set') and args.set:
+                    # args.set is [KEY, VALUE]
+                    key_value = args.set if isinstance(args.set, (list, tuple)) else []
+                    cli_args = ['config', 'set', *key_value]
+                else:
+                    # Support "config list" style captured as unknown
+                    if unknown:
+                        cli_args = ['config', *unknown]
+                    else:
+                        cli_args = ['config']
+            else:
+                # Prefer unknown tokens (e.g., "search ...", "download ...")
+                if unknown:
+                    cli_args = unknown
+                elif args.command:
+                    # Pass the command token if present; CLIInterface will show help if insufficient
+                    cli_args = [args.command]
             
-            if args.command:
-                # Execute specific command
-                exit_code = interface.run(sys.argv[1:])
+            if cli_args:
+                exit_code = interface.run(cli_args)
                 sys.exit(exit_code)
             else:
-                # No command specified, show help
-                parser.print_help()
+                # No command specified, show help for CLI interface
+                interface.run(['-h'])
                 sys.exit(0)
         
         elif args.interface == "shell":
