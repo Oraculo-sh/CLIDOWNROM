@@ -9,7 +9,7 @@ License: GPL-3.0
 """
 
 import os
-import json
+import yaml
 import locale
 from pathlib import Path
 from typing import Dict, Any, Optional, List
@@ -17,9 +17,15 @@ from loguru import logger
 
 
 class I18nManager:
-    """Gerenciador de internacionalização."""
+    """Gerenciador de internacionalização.
+
+    Nota sobre idioma base: 'en_us' é o locale canônico e serve como template
+    para todos os demais. Novos locales devem ser criados a partir de
+    locales/en_us.yaml. Chaves ausentes em outros locales farão fallback
+    automático para 'en_us'.
+    """
     
-    def __init__(self, locales_dir: Path, default_language: str = 'en'):
+    def __init__(self, locales_dir: Path, default_language: str = 'en_us'):
         """Inicializa o gerenciador de i18n.
         
         Args:
@@ -53,8 +59,8 @@ class I18nManager:
             system_locale = locale.getdefaultlocale()[0]
             
             if system_locale:
-                # Extrai código do idioma (ex: 'pt_BR' -> 'pt')
-                language_code = system_locale.split('_')[0].lower()
+                # Converte para código completo minúsculo com underscore (ex: 'pt_BR' -> 'pt_br')
+                language_code = system_locale.lower().replace('-', '_')
                 
                 # Verifica se temos tradução para este idioma
                 if self._language_file_exists(language_code):
@@ -65,7 +71,7 @@ class I18nManager:
             for env_var in ['LANG', 'LANGUAGE', 'LC_ALL', 'LC_MESSAGES']:
                 env_value = os.environ.get(env_var)
                 if env_value:
-                    language_code = env_value.split('_')[0].split('.')[0].lower()
+                    language_code = env_value.split('.')[0].lower().replace('-', '_')
                     if self._language_file_exists(language_code):
                         logger.info(f"Idioma detectado via {env_var}: {language_code}")
                         return language_code
@@ -85,7 +91,7 @@ class I18nManager:
         Returns:
             True se o arquivo existe
         """
-        language_file = self.locales_dir / f"{language_code}.json"
+        language_file = self.locales_dir / f"{language_code}.yaml"
         return language_file.exists()
     
     def _load_language(self, language_code: str, is_fallback: bool = False) -> bool:
@@ -98,7 +104,7 @@ class I18nManager:
         Returns:
             True se carregado com sucesso
         """
-        language_file = self.locales_dir / f"{language_code}.json"
+        language_file = self.locales_dir / f"{language_code}.yaml"
         
         try:
             if not language_file.exists():
@@ -106,7 +112,7 @@ class I18nManager:
                 return False
             
             with open(language_file, 'r', encoding='utf-8') as f:
-                translations = json.load(f)
+                translations = yaml.safe_load(f) or {}
             
             if is_fallback:
                 self.fallback_translations = translations
@@ -147,10 +153,10 @@ class I18nManager:
         Returns:
             Lista de códigos de idioma
         """
-        languages = []
+        languages: List[str] = []
         
         try:
-            for file_path in self.locales_dir.glob('*.json'):
+            for file_path in self.locales_dir.glob('*.yaml'):
                 language_code = file_path.stem
                 languages.append(language_code)
         except Exception as e:
@@ -168,16 +174,17 @@ class I18nManager:
             Nome do idioma
         """
         language_names = {
-            'en': 'English',
-            'pt': 'Português',
-            'es': 'Español',
-            'fr': 'Français',
-            'de': 'Deutsch',
-            'it': 'Italiano',
-            'ja': '日本語',
-            'ko': '한국어',
-            'zh': '中文',
-            'ru': 'Русский'
+            'en_us': 'English (US)',
+            'pt_br': 'Português (Brasil)',
+            'es_es': 'Español (España)',
+            'fr_fr': 'Français (France)',
+            'de_de': 'Deutsch (Deutschland)',
+            'it_it': 'Italiano (Italia)',
+            'ja_jp': '日本語',
+            'ko_kr': '한국어',
+            'zh_cn': '中文(简体)',
+            'zh_tw': '中文(繁體)',
+            'ru_ru': 'Русский'
         }
         
         return language_names.get(language_code, language_code.upper())
@@ -212,6 +219,7 @@ class I18nManager:
         Returns:
             Texto traduzido
         """
+        # Ordem de resolução: idioma atual -> fallback (en_us) -> chave literal
         # Tenta obter tradução no idioma atual
         translation = self._get_nested_value(self.translations, key)
         
@@ -303,12 +311,12 @@ class I18nManager:
 _i18n_manager: Optional[I18nManager] = None
 
 
-def init_i18n(locales_dir: Path, default_language: str = 'en') -> I18nManager:
+def init_i18n(locales_dir: Path, default_language: str = 'en_us') -> I18nManager:
     """Inicializa o sistema de i18n.
     
     Args:
         locales_dir: Diretório dos arquivos de tradução
-        default_language: Idioma padrão
+        default_language: Idioma padrão (por convenção, 'en_us' é o fallback canônico)
         
     Returns:
         Instância do gerenciador de i18n

@@ -1,0 +1,205 @@
+app:
+  name: CLI Download ROM
+  description: Cliente avançado para a API de ROMs de jogos CrocDB
+  version: Versão {version}
+  author: 'Autor: {author}'
+  license: 'Licença: {license}'
+commands:
+  search: Buscar ROMs
+  download: Baixar ROMs
+  info: Mostrar informações da ROM
+  random: Obter ROMs aleatórias
+  config: Gerenciar configuração
+  help: Mostrar ajuda
+  exit: Sair da aplicação
+  quit: Encerrar aplicação
+interface:
+  cli: Interface de Linha de Comando
+  shell: Shell Interativo
+  tui: Interface de Usuário de Texto
+  gui: Interface Gráfica do Usuário
+search:
+  query: Consulta de busca
+  platform: Plataforma
+  region: Região
+  year: Ano
+  results: Resultados da busca
+  no_results: Nenhum resultado encontrado
+  searching: Buscando...
+  found:
+    singular: Encontrado {count} resultado
+    plural: Encontrados {count} resultados
+  filters:
+    title: Filtros de Busca
+    platforms: Plataformas
+    regions: Regiões
+    year_range: Intervalo de Anos
+    exclude_hacks: Excluir Hacks
+    exclude_homebrew: Excluir Homebrew
+    exclude_prototypes: Excluir Protótipos
+download:
+  starting: Iniciando download...
+  progress: Progresso do Download
+  completed: Download concluído
+  failed: Download falhou
+  cancelled: Download cancelado
+  verifying: Verificando arquivo...
+  moving: Movendo arquivo...
+  speed: 'Velocidade: {speed}'
+  eta: 'Tempo restante: {eta}'
+  size: 'Tamanho: {size}'
+  downloaded: 'Baixado: {downloaded}'
+  percentage: '{percentage}%'
+  multiple:
+    starting: Iniciando download de {count} ROMs...
+    completed: Concluídos {successful}/{total} downloads
+  errors:
+    no_links: Nenhum link de download disponível
+    network_error: Erro de rede
+    disk_space: Espaço em disco insuficiente
+    verification_failed: Falha na verificação do arquivo
+    move_failed: Falha ao mover arquivo para o destino
+rom:
+  title: Título
+  platform: Plataforma
+  region: Região
+  year: Ano
+  size: Tamanho
+  description: Descrição
+  links: Links de Download
+  boxart: Capa
+  info: Informações da ROM
+  not_found: ROM não encontrada
+config:
+  title: Configuração
+  language: Idioma
+  download_dir: Diretório de Download
+  temp_dir: Diretório Temporário
+  max_concurrent: Máximo de Downloads Simultâneos
+  timeout: Timeout (segundos)
+  verify_downloads: Verificar Downloads
+  download_boxart: Baixar Capas
+  saved: Configuração salva
+  loaded: Configuração carregada
+  reset: Configuração restaurada para padrões
+  invalid: Valor de configuração inválido
+directories:
+  roms: Diretório de ROMs
+  temp: Diretório Temporário
+  logs: Diretório de Logs
+  cache: Diretório de Cache
+  config: Diretório de Configuração
+  created: 'Diretório criado: {path}'
+  exists: 'Diretório já existe: {path}'
+  error: 'Erro ao criar diretório: {path}'
+cache:
+  hit: Cache encontrado
+  miss: Cache não encontrado
+  expired: Cache expirado
+  cleared: Cache limpo
+  size: 'Tamanho do cache: {size}'
+api:
+  connecting: Conectando à API...
+  connected: Conectado à API
+  error: Erro da API
+  timeout: Timeout da API
+  rate_limit: Limite de taxa excedido
+  unavailable: API indisponível
+mirrors:
+  testing: Testando mirrors...
+  best: 'Melhor mirror: {host}'
+  speed: 'Velocidade: {speed}'
+  failed: Teste de mirror falhou
+  no_mirrors: Nenhum mirror disponível
+validation:
+  file_size: Validando tamanho do arquivo...
+  checksum: Validando checksum...
+  passed: Validação passou
+  failed: Validação falhou
+  corrupted: Arquivo parece estar corrompido
+errors:
+  general: Ocorreu um erro
+  file_not_found: Arquivo não encontrado
+  permission_denied: Permissão negada
+  disk_full: Disco cheio
+  network_error: Erro de rede
+  timeout: Operação expirou
+  cancelled: Operação cancelada
+  invalid_input: Entrada inválida
+  config_error: Erro de configuração
+messages:
+  welcome: Bem-vindo ao CLI Download ROM!
+  goodbye: Até logo!
+  press_enter: Pressione Enter para continuar...
+  confirm: Tem certeza? (s/N)
+  'yes': Sim
+  'no': Não
+  cancel: Cancelar
+  ok: OK
+  loading: Carregando...
+  please_wait: Por favor, aguarde...
+  done: Concluído
+  success: Sucesso
+  warning: Aviso
+  error: Erro
+  info: Informação
+menu:
+  main: Menu Principal
+  search: Buscar ROMs
+  downloads: Downloads
+  settings: Configurações
+  about: Sobre
+  exit: Sair
+  back: Voltar
+  select: Selecionar
+  navigate: Navegar
+status:
+  idle: Inativo
+  working: Trabalhando
+  downloading: Baixando
+  completed: Concluído
+  failed: Falhou
+  cancelled: Cancelado
+  paused: Pausado
+  resumed: Retomado
+units:
+  bytes: B
+  kilobytes: KB
+  megabytes: MB
+  gigabytes: GB
+  terabytes: TB
+  seconds: s
+  minutes: m
+  hours: h
+  days: d
+help:
+  usage: Uso
+  commands: Comandos Disponíveis
+  options: Opções
+  examples: Exemplos
+  description: Descrição
+  arguments: Argumentos
+  flags: Flags
+platforms:
+  loading: Carregando plataformas...
+  available: Plataformas disponíveis
+  selected: 'Plataforma selecionada: {platform}'
+  invalid: 'Plataforma inválida: {platform}'
+regions:
+  loading: Carregando regiões...
+  available: Regiões disponíveis
+  selected: 'Região selecionada: {region}'
+  invalid: 'Região inválida: {region}'
+logging:
+  level: Nível de Log
+  file: Arquivo de Log
+  console: Log no Console
+  enabled: Log habilitado
+  disabled: Log desabilitado
+system:
+  info: Informações do Sistema
+  platform: Plataforma
+  architecture: Arquitetura
+  python_version: Versão do Python
+  disk_space: Espaço Disponível em Disco
+  memory: Uso de Memória
