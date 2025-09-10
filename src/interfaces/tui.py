@@ -573,7 +573,7 @@ class ConfigScreen(Screen):
                 # General settings
                 with Container(id="general-settings"):
                     yield Static("Language:", classes="label")
-                    yield Input(value=self.tui_app.config.get('app.language', 'en'), id="language-input")
+                    yield Input(value=self.tui_app.config.get('interface.language', 'auto'), id="language-input")
                     
                     yield Static("Log Level:", classes="label")
                     yield Input(value=self.tui_app.config.get('logging.level', 'INFO'), id="log-level-input")
@@ -622,7 +622,7 @@ class ConfigScreen(Screen):
             default_interface = self.query_one("#default-interface-input", Input).value
             
             # Update configuration
-            self.tui_app.config.set('app.language', language)
+            self.tui_app.config.set('interface.language', language)
             self.tui_app.config.set('logging.level', log_level)
             self.tui_app.config.set('download.max_concurrent', max_concurrent)
             self.tui_app.config.set('download.timeout', timeout)

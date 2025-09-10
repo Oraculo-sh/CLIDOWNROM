@@ -97,7 +97,9 @@ class ShellInterface:
             Configured PromptSession instance
         """
         # History file
-        history_file = self.dirs.config_dir / 'shell_history.txt'
+        history_file = self.dirs.get_path('config') / 'shell_history.txt'
+        # Ensure directory exists to avoid errors when FileHistory touches the file
+        history_file.parent.mkdir(parents=True, exist_ok=True)
         history = FileHistory(str(history_file))
         
         # Auto-completion
@@ -613,7 +615,7 @@ class ShellInterface:
             args: Command arguments
         """
         try:
-            history_file = self.dirs.config_dir / 'shell_history.txt'
+            history_file = self.dirs.get_path('config') / 'shell_history.txt'
             if history_file.exists():
                 with open(history_file, 'r', encoding='utf-8') as f:
                     lines = f.readlines()

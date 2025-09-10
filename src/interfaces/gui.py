@@ -779,8 +779,9 @@ class ConfigScreen(QWidget):
         
         general_layout.addWidget(QLabel("Language:"), 0, 0)
         self.language_combo = QComboBox()
-        self.language_combo.addItems(["en", "pt"])
-        self.language_combo.setCurrentText(self.gui_app.config.get('app.language', 'en'))
+        # Use full locale codes
+        self.language_combo.addItems(["auto", "en_us", "pt_br"])  # extend here when adding more locales
+        self.language_combo.setCurrentText(self.gui_app.config.get('interface.language', 'auto'))
         general_layout.addWidget(self.language_combo, 0, 1)
         
         general_layout.addWidget(QLabel("Log Level:"), 1, 0)
@@ -840,7 +841,7 @@ class ConfigScreen(QWidget):
     def save_config(self):
         """Save configuration changes."""
         try:
-            self.gui_app.config.set('app.language', self.language_combo.currentText())
+            self.gui_app.config.set('interface.language', self.language_combo.currentText())
             self.gui_app.config.set('logging.level', self.log_level_combo.currentText())
             self.gui_app.config.set('download.max_concurrent', self.max_concurrent_spin.value())
             self.gui_app.config.set('download.timeout', self.timeout_spin.value())
@@ -860,7 +861,7 @@ class ConfigScreen(QWidget):
             self.gui_app.config.save_config()
             
             # Refresh UI with default values
-            self.language_combo.setCurrentText('en')
+            self.language_combo.setCurrentText('en_us')
             self.log_level_combo.setCurrentText('INFO')
             self.max_concurrent_spin.setValue(3)
             self.timeout_spin.setValue(30)
