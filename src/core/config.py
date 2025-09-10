@@ -78,11 +78,11 @@ class ConfigManager:
     
     def _get_default_config_path(self) -> Path:
         """Retorna o caminho padrão do arquivo de configuração."""
-        return Path.cwd() / 'config' / 'config.yml'
-    
+        return Path.cwd() / 'src' / 'config' / 'config.yml'
+
     def _get_user_config_path(self) -> Path:
         """Retorna o caminho do arquivo de configuração do usuário."""
-        return Path.cwd() / 'config' / 'user_config.yml'
+        return Path.cwd() / 'src' / 'config' / 'user_config.yml'
     
     def load_config(self) -> bool:
         """Carrega as configurações dos arquivos.
@@ -158,7 +158,28 @@ class ConfigManager:
                 
                 self.config[section][key] = value
                 logger.debug(f"Configuração carregada de variável de ambiente: {env_var}")
-    
+
+    # +++ NEW: language normalization helper +++
+    def _normalize_language(self, lang: Any) -> str:
+        """Normaliza o código de idioma para o formato suportado (auto, en_us, pt_br).
+        Aceita variações como en, pt, en-US, pt-BR e faz o mapeamento apropriado.
+        """
+        try:
+            s = str(lang).strip().lower()
+        except Exception:
+            return 'auto'
+        if not s:
+            return 'auto'
+        s = s.replace('-', '_')
+        # Mapear formas antigas/curtas
+        if s == 'en':
+            s = 'en_us'
+        elif s == 'pt':
+            s = 'pt_br'
+        # Conjunto de idiomas atualmente suportados
+        supported = {'en_us', 'pt_br'}
+        return s if s in supported or s == 'auto' else 'auto'
+
     def _validate_config(self):
         """Valida as configurações carregadas."""
         # Valida URL da API
@@ -185,12 +206,12 @@ class ConfigManager:
                 )
                 self.config[section][key] = self.DEFAULT_CONFIG[section][key]
         
-        # Valida idioma
-        valid_languages = ['auto', 'pt-BR', 'en-US', 'es-ES', 'fr-FR']
-        language = self.config['interface']['language']
-        if language not in valid_languages:
-            logger.warning(f"Idioma inválido: {language}. Usando 'auto'")
-            self.config['interface']['language'] = 'auto'
+        # Valida e normaliza idioma
+        lang_raw = self.config['interface']['language']
+        lang_norm = self._normalize_language(lang_raw)
+        if lang_norm != lang_raw:
+            logger.info(f"Normalizando interface.language de '{lang_raw}' para '{lang_norm}'")
+        self.config['interface']['language'] = lang_norm
         
         # Valida nível de log
         valid_log_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
@@ -251,15 +272,39 @@ class ConfigManager:
     def get(self, section: str, key: str = None, default: Any = None) -> Any:
         """Obtém um valor de configuração.
         
+        Suporta dois formatos de chamada:
+        - get('section') ou get('section', 'key', default)
+        - get('section.key', default)
+        
+        Também tolera mau uso comum onde o segundo argumento é o "default"
+        em vez de "key" (ex.: get('api', {}) ).
+        
         Args:
-            section: Seção da configuração
-            key: Chave específica (opcional)
+            section: Seção da configuração ou caminho pontuado (ex.: 'logging.level')
+            key: Chave específica (opcional quando "section" não é pontuado)
             default: Valor padrão se não encontrado
             
         Returns:
             Valor da configuração ou valor padrão.
         """
         try:
+            # Caso: segundo argumento foi passado como default (mau uso)
+            if key is not None and not isinstance(key, str):
+                default = key
+                key = None
+            
+            # Suporte a caminho pontuado (ex.: 'logging.level')
+            if key is None and isinstance(section, str) and '.' in section:
+                parts = section.split('.')
+                current: Any = self.config
+                for part in parts:
+                    if isinstance(current, dict) and part in current:
+                        current = current[part]
+                    else:
+                        return default
+                return current
+            
+            # Comportamento padrão (seção e chave separadas)
             if key is None:
                 return self.config.get(section, default)
             else:
@@ -267,24 +312,42 @@ class ConfigManager:
         except Exception:
             return default
     
-    def set(self, section: str, key: str, value: Any) -> bool:
+    def set(self, section: str, key: Any = None, value: Any = None) -> bool:
         """Define um valor de configuração.
         
+        Suporta dois formatos de chamada:
+        - set('section', 'key', value)
+        - set('section.key', value)
+        
         Args:
-            section: Seção da configuração
-            key: Chave da configuração
-            value: Valor a ser definido
+            section: Seção ou caminho pontuado (ex.: 'logging.level')
+            key: Chave da configuração OU valor quando usar caminho pontuado
+            value: Valor a ser definido (obrigatório quando "key" for a chave)
             
         Returns:
             True se o valor foi definido com sucesso.
         """
         try:
-            if section not in self.config:
-                self.config[section] = {}
+            # Modo caminho pontuado: set('logging.level', 'DEBUG')
+            if value is None and isinstance(section, str) and '.' in section and key is not None:
+                value = key
+                parts = section.split('.')
+                current = self.config
+                for part in parts[:-1]:
+                    if part not in current or not isinstance(current[part], dict):
+                        current[part] = {}
+                    current = current[part]
+                current[parts[-1]] = value
+                return True
             
+            # Modo padrão: set('logging', 'level', 'DEBUG')
+            if not isinstance(key, str):
+                raise ValueError("Parâmetros inválidos para set: esperava (section, key, value) ou ('section.key', value)")
+            if section not in self.config or not isinstance(self.config[section], dict):
+                self.config[section] = {}
             self.config[section][key] = value
             return True
-            
+        
         except Exception as e:
             logger.error(f"Erro ao definir configuração {section}.{key}: {e}")
             return False
