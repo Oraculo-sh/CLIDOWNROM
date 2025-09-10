@@ -1,32 +1,36 @@
 # CLI Download ROM
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/Oraculo-sh/CLIDOWNROM)
+[![Status](https://img.shields.io/badge/status-beta-yellow.svg)](#)
+[![Version](https://img.shields.io/badge/version-1.0.0b-blue.svg)](#)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![Platforms](https://img.shields.io/badge/plataforma-Windows%20%7C%20Linux-lightgrey.svg)](#)
+[![Interfaces](https://img.shields.io/badge/interfaces-CLI%20%7C%20Shell%20%7C%20TUI%20%7C%20GUI-8A2BE2.svg)](#)
+[![Languages](https://img.shields.io/badge/i18n-EN%20%7C%20PT-brightgreen.svg)](#)
 
-Um cliente avançado multiplataforma para a API CrocDB de ROMs de jogos, oferecendo múltiplas interfaces de usuário para diferentes casos de uso.
+**CLIDOWNROM** is a cross-platform client that connects to the public CrocDB API to search and download ROMs with a high degree of relevance. It unifies CLI, interactive Shell, TUI, and GUI (with gamepad support) over the same search, filtering, and download services, displaying useful metadata and organizing transfers quickly, safely, and in an automatable way — ideal for enthusiasts, collectors, and integrators.
 
-## 🎯 Características Principais
+## 🎯 Key Features
 
-- **4 Interfaces Diferentes**: CLI, Shell Interativo, TUI e GUI navegável por joystick
-- **Download Inteligente**: Múltiplas conexões, retry automático e verificação de integridade
-- **Busca Avançada**: Algoritmo de relevância com filtros por plataforma, região e ano
-- **Internacionalização**: Suporte completo para múltiplos idiomas
-- **Cache Inteligente**: Sistema de cache local para otimizar performance
-- **Logs Detalhados**: Sistema completo de logging para debugging e auditoria
+- **4 Different Interfaces**: CLI, Interactive Shell, TUI, and GUI navigable by joystick
+- **Smart Download**: Multiple connections, automatic retry, and integrity verification
+- **Advanced Search**: Relevance algorithm with filters by platform, region, and year
+- **Internationalization**: Full support for multiple languages
+- **Smart Cache**: Local caching system to optimize performance
+- **Detailed Logs**: Full logging system for debugging and auditing
 
-## 🖥️ Interfaces Disponíveis
+## 🖥️ Available Interfaces
 
 ### 1. CLI (Command Line Interface)
-Interface não-interativa ideal para scripts e automação:
+Non-interactive interface ideal for scripts and automation:
 ```bash
 clidownrom search "Super Mario" --platform snes --region USA
 clidownrom download --id 12345 --output ./roms/
 clidownrom random --platform nes --count 5
 ```
 
-### 2. Shell Interativo
-REPL avançado com histórico de comandos e autocompletar:
+### 2. Interactive Shell
+Advanced REPL with command history and autocomplete:
 ```bash
 clidownrom --interface shell
 > search "Zelda" --platform snes
@@ -35,36 +39,36 @@ clidownrom --interface shell
 ```
 
 ### 3. TUI (Text User Interface)
-Interface de tela completa navegável por teclado, inspirada no htop:
+Full-screen interface navigable by keyboard, inspired by htop:
 ```bash
 clidownrom --interface tui
 ```
 
 ### 4. GUI (Graphical User Interface)
-Interface gráfica navegável por joystick/gamepad para uso em TV:
+Graphical interface navigable by joystick/gamepad for TV usage:
 ```bash
 clidownrom --interface gui
 ```
 
-## 📦 Instalação
+## 📦 Installation
 
-### Pré-requisitos
-- Python 3.8 ou superior
-- Windows 10+ ou Linux (Ubuntu 18.04+)
+### Prerequisites
+- Python 3.8 or higher
+- Windows 10+ or Linux (Ubuntu 18.04+)
 
-### Instalação via Git
+### Install via Git
 ```bash
 git clone https://github.com/Oraculo-sh/CLIDOWNROM.git
 cd CLIDOWNROM
 pip install -r requirements.txt
 ```
 
-### Executável Standalone
-Baixe o executável pré-compilado da [página de releases](https://github.com/Oraculo-sh/CLIDOWNROM/releases).
+### Standalone Executable
+Download the precompiled executable from the [releases page](https://github.com/Oraculo-sh/CLIDOWNROM/releases).
 
-## 🚀 Uso Rápido
+## 🚀 Quick Start
 
-### Buscar ROMs
+### Search ROMs
 ```bash
 # Busca básica
 python main.py search "Super Mario Bros"
@@ -76,7 +80,7 @@ python main.py search "Zelda" --platform snes --region USA --year 1991
 python main.py random --platform nes --count 10
 ```
 
-### Download de ROMs
+### Download ROMs
 ```bash
 # Download por ID
 python main.py download --id 12345
@@ -88,7 +92,7 @@ python main.py search "Metroid" --download
 python main.py download --id 12345 --no-boxart --output ./custom/
 ```
 
-### Informações de ROM
+### ROM Information
 ```bash
 # Visualizar detalhes
 python main.py info --id 12345
@@ -97,7 +101,7 @@ python main.py info --id 12345
 python main.py info --id 12345 --format json
 ```
 
-### Configuração
+### Configuration
 ```bash
 # Listar configurações
 python main.py config --list
@@ -109,9 +113,9 @@ python main.py config --set download.max_concurrent 5
 python main.py config --reset
 ```
 
-## ⚙️ Configuração
+## ⚙️ Configuration
 
-O arquivo `user_config.yml` permite personalizar o comportamento da aplicação:
+The `user_config.yml` file allows you to customize the application's behavior:
 
 ```yaml
 api:
@@ -134,18 +138,18 @@ logging:
   file_output: true
 ```
 
-## 🎮 Controles do Gamepad (GUI)
+## 🎮 Gamepad Controls (GUI)
 
-| Botão | Ação |
+| Button | Action |
 |-------|------|
-| A | Selecionar/Confirmar |
-| B | Voltar/Cancelar |
+| A | Select/Confirm |
+| B | Back/Cancel |
 | X | Download |
-| Y | Informações |
-| D-Pad | Navegar |
-| Analógico | Navegar (alternativo) |
+| Y | Information |
+| D-Pad | Navigate |
+| Analog | Navigate (alternative) |
 
-## 📁 Estrutura de Diretórios
+## 📁 Directory Structure
 
 ```
 CLIDOWNLOAD/
@@ -165,16 +169,17 @@ CLIDOWNLOAD/
     └── user_config.yml
 ```
 
-## 🌍 Idiomas Suportados
+## 🌍 Currently Supported Languages
 
-- **Inglês** (en) - Padrão
-- **Português** (pt) - Brasileiro
+- English (en_us) - Default
+- Portuguese (pt_br) - Brazilian
+- Russian (ru) - Русский
 
-Para adicionar novos idiomas, crie um arquivo JSON em `src/locales/` seguindo o padrão dos existentes.
+To add new languages, create a JSON file in `src/locales/` using `en_us.yml` as a reference.
 
-## 🔧 Desenvolvimento
+## 🔧 Development
 
-### Configuração do Ambiente
+### Environment Setup
 ```bash
 git clone https://github.com/Oraculo-sh/CLIDOWNROM.git
 cd CLIDOWNROM
@@ -184,89 +189,79 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
-### Executar Testes
+### Run Tests
 ```bash
 python -m pytest tests/
 ```
 
-### Compilar Executável
+### Build Executable
 ```bash
 pyinstaller --onefile --name clidownrom main.py
 ```
 
-## 📊 Funcionalidades Avançadas
+## 📊 Advanced Features
 
-### Sistema de Cache
-- Cache automático de listas de plataformas e regiões
-- Tempo de expiração configurável
-- Limpeza automática de cache antigo
+### Caching System
+- Automatic caching of platform and region lists
+- Configurable expiration time
+- Automatic cleanup of old cache
 
-### Download Inteligente
-- Teste automático de velocidade dos mirrors
-- Download com múltiplas conexões
-- Verificação de integridade por hash
-- Retry automático em caso de falha
+### Smart Download
+- Automatic mirror speed testing
+- Download with multiple connections
+- Hash-based integrity verification
+- Automatic retry on failure
 
-### Logging Completo
-- `lastlog.txt`: Output completo da última execução
-- `session-*.log`: Logs detalhados com timestamp
-- Rotação automática de logs antigos
+### Full Logging
+- `lastlog.txt`: Full output of the last execution
+- `session-*.log`: Detailed logs with timestamp
+- Automatic rotation of old logs
 
-## 🤝 Contribuindo
+## 🤝 Contributing
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+1. Fork the project
+2. Create a branch for your feature (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Diretrizes de Contribuição
-- Siga o padrão de código existente
-- Adicione testes para novas funcionalidades
-- Atualize a documentação quando necessário
-- Use commits descritivos
+### Contribution Guidelines
+- Follow the existing code style
+- Add tests for new functionality
+- Update documentation when necessary
+- Use descriptive commits
 
 ## 📝 Changelog
 
-### v1.0.0 (Em Desenvolvimento)
-- ✅ Interface CLI completa
-- ✅ Interface Shell interativa
-- ✅ Interface TUI com Textual
-- ✅ Interface GUI com suporte a gamepad
-- ✅ Sistema de download com múltiplas conexões
-- ✅ Cache inteligente
-- ✅ Internacionalização (EN/PT)
-- ✅ Sistema completo de logging
-- ✅ Configuração via arquivo YAML
+### v1.0.0 (In Development)
+- ✅ Full CLI interface
+- ✅ Interactive Shell interface
+- ✅ TUI interface with Textual
+- ✅ GUI interface with gamepad support
+- ✅ Download system with multiple connections
+- ✅ Smart cache
+- ✅ Internationalization (EN/PT)
+- ✅ Full logging system
+- ✅ Configuration via YAML file
 
-## 🐛 Problemas Conhecidos
+## 🐛 Known Issues
 
-- Gamepad pode não funcionar em algumas distribuições Linux sem configuração adicional
-- TUI pode ter problemas de renderização em terminais muito antigos
-- Download muito rápido pode sobrecarregar alguns mirrors
+- Gamepad may not work on some Linux distributions without additional configuration
+- TUI may have rendering issues in very old terminals
+- Very fast downloads may overload some mirrors
 
-## 📄 Licença
+## 📄 License
 
-Este projeto está licenciado sob a GPL-3.0 License - veja o arquivo [LICENSE](LICENSE) para detalhes.
+This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
 
-## 👨‍💻 Autor
+## 🙏 Acknowledgments
 
-**Leonne Martins** ([@Oraculo-sh](https://github.com/Oraculo-sh))
-
-## 🙏 Agradecimentos
-
-- [CrocDB](https://crocdb.net/) pela API de ROMs
-- Comunidade Python pelas excelentes bibliotecas
-- Contribuidores e testadores
-
-## 📞 Suporte
-
-- 🐛 [Issues](https://github.com/Oraculo-sh/CLIDOWNROM/issues)
-- 💬 [Discussions](https://github.com/Oraculo-sh/CLIDOWNROM/discussions)
-- 📧 Email: [seu-email@exemplo.com]
+- [CrocDB](https://crocdb.net/) for the ROMs API
+- Python community for excellent libraries
+- Contributors and testers
 
 ---
 
 <p align="center">
-  <strong>CLI Download ROM</strong> - Baixe suas ROMs favoritas com estilo! 🎮
+  <strong>CLI Download ROM</strong> - Download your favorite ROMs in style! 🎮
 </p>
