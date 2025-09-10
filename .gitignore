@@ -80,6 +80,7 @@ target/
 
 # IPython
 profile_default/
+# IPython profiles
 ipython_config.py
 
 # pyenv
@@ -162,7 +163,7 @@ cython_debug/
 ROMS/
 TEMP/
 logs/
-config/user_config.yml
+src/config/user_config.yml
 cache/
 *.cache
 lastlog.txt
