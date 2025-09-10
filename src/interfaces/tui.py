@@ -214,11 +214,13 @@ class SearchScreen(Screen):
         for i, rom in enumerate(self.search_results, 1):
             title = rom.title[:30] + "..." if len(rom.title) > 30 else rom.title
             platform = rom.platform[:12] + "..." if len(rom.platform) > 12 else rom.platform
-            size_str = format_file_size(rom.size) if rom.size else 'N/A'
+            size_mb = rom.get_size_mb()
+            size_str = f"{size_mb:.1f} MB" if size_mb > 0 else 'N/A'
             year_str = str(rom.year) if rom.year else 'N/A'
+            region_str = rom.regions[0] if rom.regions else 'N/A'
             
             table.add_row(
-                str(i), title, platform, rom.region, year_str, size_str
+                str(i), title, platform, region_str, year_str, size_str
             )
     
     def clear_search(self) -> None:
@@ -503,16 +505,18 @@ class ROMInfoScreen(ModalScreen):
             yield Static(f"ROM Information: {self.rom.title}", classes="modal-title")
             
             with ScrollableContainer():
-                yield Static(f"ID: {self.rom.id}")
+                yield Static(f"ID: {self.rom.slug}")
                 yield Static(f"Title: {self.rom.title}")
                 yield Static(f"Platform: {self.rom.platform}")
-                yield Static(f"Region: {self.rom.region}")
+                region_str = self.rom.regions[0] if self.rom.regions else 'N/A'
+                yield Static(f"Region: {region_str}")
                 
-                if self.rom.year:
+                if hasattr(self.rom, 'year') and self.rom.year:
                     yield Static(f"Year: {self.rom.year}")
                 
-                if self.rom.size:
-                    yield Static(f"Size: {format_file_size(self.rom.size)}")
+                size_mb = self.rom.get_size_mb()
+                if size_mb > 0:
+                    yield Static(f"Size: {size_mb:.1f} MB")
                 
                 if self.rom.description:
                     yield Static(f"Description: {self.rom.description}")

@@ -716,13 +716,15 @@ class ShellInterface:
         print(f"\n{t('rom.info')}:")
         print("=" * 50)
         print(f"{t('rom.title')}: {rom.title}")
-        print(f"ID: {rom.id}")
+        print(f"ID: {rom.slug}")
         print(f"{t('rom.platform')}: {rom.platform}")
-        print(f"{t('rom.region')}: {rom.region}")
-        if rom.year:
+        region_str = rom.regions[0] if rom.regions else 'N/A'
+        print(f"{t('rom.region')}: {region_str}")
+        if hasattr(rom, 'year') and rom.year:
             print(f"{t('rom.year')}: {rom.year}")
-        if rom.size:
-            print(f"{t('rom.size')}: {format_file_size(rom.size)}")
+        size_mb = rom.get_size_mb()
+        if size_mb > 0:
+            print(f"{t('rom.size')}: {size_mb:.1f} MB")
         if rom.description:
             print(f"{t('rom.description')}: {rom.description}")
         if rom.download_links:

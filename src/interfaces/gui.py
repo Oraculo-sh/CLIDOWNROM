@@ -1121,17 +1121,19 @@ D-Pad - Navigate
     
     def show_rom_info(self, rom: ROMEntry):
         """Show ROM information dialog."""
+        region_str = rom.regions[0] if rom.regions else 'N/A'
         info_text = f"""
 Title: {rom.title}
 Platform: {rom.platform}
-Region: {rom.region}
+Region: {region_str}
         """
         
-        if rom.year:
+        if hasattr(rom, 'year') and rom.year:
             info_text += f"Year: {rom.year}\n"
         
-        if rom.size:
-            info_text += f"Size: {format_file_size(rom.size)}\n"
+        size_mb = rom.get_size_mb()
+        if size_mb > 0:
+            info_text += f"Size: {size_mb:.1f} MB\n"
         
         if rom.description:
             info_text += f"\nDescription: {rom.description}"
