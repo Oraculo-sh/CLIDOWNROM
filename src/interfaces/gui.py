@@ -16,6 +16,7 @@ from typing import List, Optional, Dict, Any, Callable
 from pathlib import Path
 from threading import Thread
 import time
+from loguru import logger
 
 try:
     from PyQt6.QtWidgets import (
@@ -877,7 +878,141 @@ class ConfigScreen(QWidget):
         self.gui_app.show_main_screen()
 
 
-class GUIInterface(QMainWindow):
+class MainWindow(QMainWindow):
+    """
+    Main window class for the GUI interface.
+    """
+    
+    def __init__(self, gui_interface):
+        super().__init__()
+        self.gui_interface = gui_interface
+        self.setup_ui()
+        self.setup_style()
+    
+    def setup_ui(self):
+        """Setup the main UI."""
+        self.setWindowTitle(f"{t('app.name')} - {t('interface.gui')}")
+        self.setMinimumSize(1024, 768)
+        
+        # Central widget with stacked layout
+        self.central_widget = QStackedWidget()
+        self.setCentralWidget(self.central_widget)
+        
+        # Create screens
+        self.main_screen = self.gui_interface.create_main_screen()
+        self.search_screen = SearchScreen(self.gui_interface)
+        self.config_screen = ConfigScreen(self.gui_interface)
+        
+        # Add screens to stack
+        self.central_widget.addWidget(self.main_screen)
+        self.central_widget.addWidget(self.search_screen)
+        self.central_widget.addWidget(self.config_screen)
+    
+    def setup_style(self):
+        """Setup application styling."""
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #1a202c;
+                color: white;
+            }
+            QLabel {
+                color: white;
+            }
+            QLineEdit {
+                background-color: #2d3748;
+                border: 2px solid #4a5568;
+                border-radius: 8px;
+                padding: 8px;
+                color: white;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border-color: #63b3ed;
+            }
+            QPushButton {
+                background-color: #4299e1;
+                border: none;
+                border-radius: 8px;
+                padding: 12px 24px;
+                color: white;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #3182ce;
+            }
+            QPushButton:pressed {
+                background-color: #2c5282;
+            }
+            QPushButton:focus {
+                border: 2px solid #63b3ed;
+            }
+            QListWidget {
+                background-color: #2d3748;
+                border: 2px solid #4a5568;
+                border-radius: 8px;
+                color: white;
+                font-size: 12px;
+            }
+            QListWidget::item {
+                padding: 8px;
+                border-bottom: 1px solid #4a5568;
+            }
+            QListWidget::item:selected {
+                background-color: #4299e1;
+            }
+            QTextEdit {
+                background-color: #2d3748;
+                border: 2px solid #4a5568;
+                border-radius: 8px;
+                color: white;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+            }
+            QProgressBar {
+                border: 2px solid #4a5568;
+                border-radius: 8px;
+                text-align: center;
+                color: white;
+                font-weight: bold;
+            }
+            QProgressBar::chunk {
+                background-color: #48bb78;
+                border-radius: 6px;
+            }
+            QComboBox {
+                background-color: #2d3748;
+                border: 2px solid #4a5568;
+                border-radius: 8px;
+                padding: 8px;
+                color: white;
+                font-size: 14px;
+            }
+            QComboBox:focus {
+                border-color: #63b3ed;
+            }
+            QSpinBox {
+                background-color: #2d3748;
+                border: 2px solid #4a5568;
+                border-radius: 8px;
+                padding: 8px;
+                color: white;
+                font-size: 14px;
+            }
+            QSpinBox:focus {
+                border-color: #63b3ed;
+            }
+        """)
+    
+    def closeEvent(self, event):
+        """Handle application close event."""
+        self.gui_interface.gamepad.stop()
+        if hasattr(self.gui_interface, 'download_cancelled'):
+            self.gui_interface.download_cancelled = True
+        event.accept()
+
+
+class GUIInterface:
     """
     Graphical User Interface for CLI Download ROM.
     
@@ -886,8 +1021,6 @@ class GUIInterface(QMainWindow):
     
     def __init__(self, config_manager: ConfigManager, directory_manager: DirectoryManager,
                  log_manager: LogManager):
-        super().__init__()
-        
         self.config = config_manager
         self.dirs = directory_manager
         self.logger = log_manager
@@ -895,9 +1028,8 @@ class GUIInterface(QMainWindow):
         # Initialize API client
         api_config = self.config.get('api', {}) or {}
         self.api_client = CrocDBClient(
-            base_url=api_config.get('base_url'),
-            timeout=api_config.get('timeout', 30),
-            max_retries=api_config.get('max_retries', 3)
+            base_url=api_config.get('base_url', 'https://api.crocdb.net'),
+            timeout=api_config.get('timeout', 30)
         )
         
         # Initialize search engine
@@ -910,40 +1042,13 @@ class GUIInterface(QMainWindow):
         
         # Initialize gamepad manager
         self.gamepad = GamepadManager()
-        self.gamepad.button_pressed.connect(self.handle_gamepad_button)
-        self.gamepad.dpad_moved.connect(self.handle_gamepad_dpad)
         
         # Download state
         self.download_thread = None
         self.download_cancelled = False
         
-        self.setup_ui()
-        self.setup_style()
-        
-        # Start gamepad monitoring
-        self.gamepad.start()
-    
-    def setup_ui(self):
-        """Setup the main UI."""
-        self.setWindowTitle(f"{t('app.name')} - {t('interface.gui')}")
-        self.setMinimumSize(1024, 768)
-        
-        # Central widget with stacked layout
-        self.central_widget = QStackedWidget()
-        self.setCentralWidget(self.central_widget)
-        
-        # Create screens
-        self.main_screen = self.create_main_screen()
-        self.search_screen = SearchScreen(self)
-        self.config_screen = ConfigScreen(self)
-        
-        # Add screens to stack
-        self.central_widget.addWidget(self.main_screen)
-        self.central_widget.addWidget(self.search_screen)
-        self.central_widget.addWidget(self.config_screen)
-        
-        # Show main screen
-        self.show_main_screen()
+        # Main window will be created in run_interface
+        self.main_window = None
     
     def create_main_screen(self) -> QWidget:
         """Create the main menu screen."""
@@ -1001,78 +1106,23 @@ class GUIInterface(QMainWindow):
         widget.setLayout(layout)
         return widget
     
-    def setup_style(self):
-        """Setup application styling."""
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #1a202c;
-                color: white;
-            }
-            QLabel {
-                color: white;
-            }
-            QLineEdit {
-                background-color: #2d3748;
-                border: 2px solid #4a5568;
-                border-radius: 5px;
-                padding: 5px;
-                color: white;
-                font-size: 12px;
-            }
-            QLineEdit:focus {
-                border-color: #00ff00;
-            }
-            QComboBox, QSpinBox {
-                background-color: #2d3748;
-                border: 2px solid #4a5568;
-                border-radius: 5px;
-                padding: 5px;
-                color: white;
-                min-height: 30px;
-            }
-            QComboBox:focus, QSpinBox:focus {
-                border-color: #00ff00;
-            }
-            QTextEdit {
-                background-color: #2d3748;
-                border: 2px solid #4a5568;
-                border-radius: 5px;
-                color: white;
-            }
-            QCheckBox {
-                color: white;
-            }
-            QTabWidget::pane {
-                border: 2px solid #4a5568;
-                background-color: #2d3748;
-            }
-            QTabBar::tab {
-                background-color: #4a5568;
-                color: white;
-                padding: 10px;
-                margin: 2px;
-            }
-            QTabBar::tab:selected {
-                background-color: #00ff00;
-                color: black;
-            }
-        """)
+    # Removed setup_style method - now handled by MainWindow class
     
     def show_main_screen(self):
         """Show the main menu screen."""
-        self.central_widget.setCurrentWidget(self.main_screen)
+        self.main_window.central_widget.setCurrentWidget(self.main_window.main_screen)
     
     def show_search_screen(self):
         """Show the search screen."""
-        self.central_widget.setCurrentWidget(self.search_screen)
+        self.main_window.central_widget.setCurrentWidget(self.main_window.search_screen)
     
     def show_config_screen(self):
         """Show the configuration screen."""
-        self.central_widget.setCurrentWidget(self.config_screen)
+        self.main_window.central_widget.setCurrentWidget(self.main_window.config_screen)
     
     def show_random_roms(self):
         """Show random ROMs."""
-        self.search_screen.get_random_roms()
+        self.main_window.search_screen.get_random_roms()
         self.show_search_screen()
     
     def show_about(self):
@@ -1093,14 +1143,14 @@ Y Button - Info
 D-Pad - Navigate
         """
         
-        QMessageBox.about(self, "About", about_text)
+        QMessageBox.about(self.main_window, "About", about_text)
     
     def perform_search_async(self, query: str, search_filter: SearchFilter, callback: Callable):
         """Perform search in background thread."""
         def search_worker():
             try:
-                import asyncio
-                results = asyncio.run(self.search_engine.search(query, search_filter, 50))
+                # Use synchronous search instead of asyncio
+                results = self.search_engine.search_sync(query, search_filter, 50)
                 QTimer.singleShot(0, lambda: callback([rom.rom_entry for rom in results]))
             except Exception as e:
                 QTimer.singleShot(0, lambda: callback([]))
@@ -1112,7 +1162,8 @@ D-Pad - Navigate
         """Get random ROMs in background thread."""
         def random_worker():
             try:
-                results = self.search_engine.get_random_roms(10, search_filter)
+                # Use synchronous random search
+                results = self.search_engine.get_random_roms_sync(10, search_filter)
                 QTimer.singleShot(0, lambda: callback(results))
             except Exception as e:
                 QTimer.singleShot(0, lambda: callback([]))
@@ -1139,13 +1190,13 @@ Region: {region_str}
         if rom.description:
             info_text += f"\nDescription: {rom.description}"
         
-        QMessageBox.information(self, f"ROM Info: {rom.title}", info_text)
+        QMessageBox.information(self.main_window, f"ROM Info: {rom.title}", info_text)
     
     def start_download(self, roms: List[ROMEntry]):
         """Start downloading ROMs."""
         download_screen = DownloadScreen(self, roms)
-        self.central_widget.addWidget(download_screen)
-        self.central_widget.setCurrentWidget(download_screen)
+        self.main_window.central_widget.addWidget(download_screen)
+        self.main_window.central_widget.setCurrentWidget(download_screen)
     
     def start_download_process(self, roms: List[ROMEntry], progress_callback: Callable, complete_callback: Callable):
         """Start download process in background thread."""
@@ -1216,9 +1267,18 @@ Region: {region_str}
             event = QKeyEvent(QKeyEvent.Type.KeyPress, key, Qt.KeyboardModifier.NoModifier)
             QApplication.postEvent(focused_widget, event)
     
+    def close(self):
+        """Close the application."""
+        if hasattr(self, 'download_cancelled'):
+            self.download_cancelled = True
+        if hasattr(self, 'main_window'):
+            self.main_window.close()
+    
     def closeEvent(self, event):
         """Handle application close event."""
         self.gamepad.stop()
+        if hasattr(self, 'download_cancelled'):
+            self.download_cancelled = True
         event.accept()
     
     def run_interface(self) -> int:
@@ -1233,10 +1293,26 @@ Region: {region_str}
             if app is None:
                 app = QApplication(sys.argv)
             
-            self.show()
-            return app.exec()
+            # Create main window using the new MainWindow class
+            self.main_window = MainWindow(self)
             
+            # Set close event handler
+            self.main_window.closeEvent = self.closeEvent
+            
+            self.main_window.show()
+            return app.exec()
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             self.logger.error(f"GUI error: {e}")
             print(f"{t('errors.general')}: {e}")
             return 1
+    
+    def run(self) -> int:
+        """
+        Alias for run_interface() to maintain compatibility.
+        
+        Returns:
+            Exit code
+        """
+        return self.run_interface()
