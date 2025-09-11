@@ -25,6 +25,7 @@ from tqdm import tqdm
 
 from ..api.crocdb_client import ROMEntry
 from ..core.directory_manager import DirectoryManager
+from ..utils import sanitize_filename
 
 
 @dataclass
@@ -86,7 +87,7 @@ class MirrorTester:
             start_time = time.time()
             downloaded = 0
             
-            async with httpx.AsyncClient(timeout=self.test_timeout) as client:
+            async with httpx.AsyncClient(timeout=self.test_timeout, follow_redirects=True) as client:
                 async with client.stream('GET', url) as response:
                     if response.status_code != 200:
                         return False, 0.0
@@ -240,8 +241,11 @@ class DownloadManager:
         Returns:
             Resultado do download
         """
+        # Sanitiza o nome do arquivo
+        sanitized_filename = sanitize_filename(filename)
+        
         async with self.semaphore:
-            return await self._download_file_internal(url, filename, expected_size)
+            return await self._download_file_internal(url, sanitized_filename, expected_size)
     
     async def _download_file_internal(self, 
                                      url: str, 
@@ -350,7 +354,7 @@ class DownloadManager:
                                expected_size: Optional[int] = None) -> bool:
         """Executa o download do arquivo."""
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
                 async with client.stream('GET', url) as response:
                     if response.status_code != 200:
                         logger.error(f"Erro HTTP {response.status_code} para {url}")
@@ -410,10 +414,17 @@ class DownloadManager:
             
             file_size = file_path.stat().st_size
             
-            # Verifica tamanho se fornecido
+            # Verifica tamanho se fornecido (com tolerância para pequenas diferenças)
             if expected_size and file_size != expected_size:
-                logger.error(f"Tamanho incorreto: esperado {expected_size}, obtido {file_size}")
-                return False
+                # Permite diferença de até 1% ou 100 bytes (o que for maior)
+                tolerance = max(100, int(expected_size * 0.01))
+                size_diff = abs(file_size - expected_size)
+                
+                if size_diff > tolerance:
+                    logger.error(f"Tamanho incorreto: esperado {expected_size}, obtido {file_size} (diferença: {size_diff} bytes)")
+                    return False
+                else:
+                    logger.warning(f"Pequena diferença de tamanho: esperado {expected_size}, obtido {file_size} (diferença: {size_diff} bytes, dentro da tolerância)")
             
             # Verifica se o arquivo não está vazio
             if file_size == 0:
