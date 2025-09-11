@@ -194,9 +194,8 @@ class SearchEngine:
         title_regions = extract_region_from_title(rom_entry.title)
         
         # Verifica região da entrada
-        entry_region = rom_entry.region
-        if entry_region:
-            title_regions.append(entry_region)
+        if rom_entry.regions:
+            title_regions.extend(rom_entry.regions)
         
         if not title_regions:
             return 0.3  # Pontuação baixa para região desconhecida
@@ -392,8 +391,8 @@ class SearchEngine:
             # Filtro de região
             if search_filter.regions:
                 title_regions = extract_region_from_title(rom_entry.title)
-                if rom_entry.region:
-                    title_regions.append(rom_entry.region)
+                if rom_entry.regions:
+                    title_regions.extend(rom_entry.regions)
                 
                 region_match = False
                 for region in search_filter.regions:
@@ -514,25 +513,32 @@ class SearchEngine:
         logger.info(f"Buscando {count} ROMs aleatórias")
         
         try:
-            # Busca ROMs aleatórias
-            random_entries = await self.api_client.get_random_entries(
-                platforms=search_filter.platforms if search_filter else None,
-                regions=search_filter.regions if search_filter else None,
-                count=count * 2  # Busca mais para ter margem após filtros
-            )
+            random_entries = []
+            attempts = 0
+            max_attempts = count * 3  # Máximo de tentativas para evitar loop infinito
+            
+            # Busca ROMs aleatórias uma por vez
+            while len(random_entries) < count and attempts < max_attempts:
+                attempts += 1
+                random_entry = self.api_client.get_random_entry()
+                
+                if random_entry:
+                    # Verifica se já temos esta ROM (evita duplicatas)
+                    if not any(entry.slug == random_entry.slug for entry in random_entries):
+                        # Aplica filtros se fornecidos
+                        if search_filter:
+                            filtered = self._apply_filters([random_entry], search_filter)
+                            if filtered:
+                                random_entries.extend(filtered)
+                        else:
+                            random_entries.append(random_entry)
             
             if not random_entries:
                 logger.info("Nenhuma ROM aleatória encontrada")
                 return []
             
-            # Aplica filtros se fornecidos
-            if search_filter:
-                filtered_entries = self._apply_filters(random_entries, search_filter)
-            else:
-                filtered_entries = random_entries
-            
             # Limita resultados
-            final_results = filtered_entries[:count]
+            final_results = random_entries[:count]
             
             logger.info(f"Retornando {len(final_results)} ROMs aleatórias")
             return final_results
@@ -540,6 +546,74 @@ class SearchEngine:
         except Exception as e:
             logger.error(f"Erro na busca aleatória: {e}")
             return []
+    
+    def search_sync(self, 
+                   query: str, 
+                   search_filter: Optional[SearchFilter] = None,
+                   limit: int = 50) -> List[ROMScore]:
+        """Busca ROMs com ranking de relevância (versão síncrona).
+        
+        Args:
+            query: Consulta de busca
+            search_filter: Filtros opcionais
+            limit: Número máximo de resultados
+            
+        Returns:
+            Lista de ROMs ordenadas por relevância
+        """
+        import asyncio
+        try:
+            # Executa a versão assíncrona de forma síncrona
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Se já estamos em um loop, cria uma nova task
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, self.search(query, search_filter, limit))
+                    return future.result()
+            else:
+                return asyncio.run(self.search(query, search_filter, limit))
+        except Exception as e:
+            logger.error(f"Erro na busca síncrona: {e}")
+            return []
+    
+    def get_random_roms_sync(self, count: int = 10, search_filter: Optional[SearchFilter] = None) -> List[ROMEntry]:
+        """Busca ROMs aleatórias (versão síncrona).
+        
+        Args:
+            count: Número de ROMs aleatórias
+            search_filter: Filtros opcionais
+            
+        Returns:
+            Lista de ROMs aleatórias
+        """
+        import asyncio
+        try:
+            # Executa a versão assíncrona de forma síncrona
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Se já estamos em um loop, cria uma nova task
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, self.search_random(search_filter, count))
+                    return future.result()
+            else:
+                return asyncio.run(self.search_random(search_filter, count))
+        except Exception as e:
+            logger.error(f"Erro na busca aleatória síncrona: {e}")
+            return []
+    
+    def get_random_roms(self, count: int = 10, search_filter: Optional[SearchFilter] = None) -> List[ROMEntry]:
+        """Busca ROMs aleatórias (versão síncrona) - alias para compatibilidade.
+        
+        Args:
+            count: Número de ROMs aleatórias
+            search_filter: Filtros opcionais
+            
+        Returns:
+            Lista de ROMs aleatórias
+        """
+        return self.get_random_roms_sync(count, search_filter)
     
     async def get_rom_info(self, rom_id: str) -> Optional[ROMEntry]:
         """Obtém informações detalhadas de uma ROM.
