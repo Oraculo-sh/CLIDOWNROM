@@ -12,6 +12,7 @@ License: GPL-3.0
 import sys
 import os
 import argparse
+import glob
 from pathlib import Path
 from loguru import logger
 
@@ -31,6 +32,26 @@ from src.interfaces import (
     is_tui_available,
     is_gui_available
 )
+
+def get_available_languages() -> list:
+    """
+    Automatically detect available languages from locale files.
+    
+    Returns:
+        List of available language codes
+    """
+    locales_dir = Path(__file__).parent / "src" / "locales"
+    yaml_files = glob.glob(str(locales_dir / "*.yaml"))
+    
+    languages = ["auto"]  # Always include auto option
+    
+    for yaml_file in yaml_files:
+        # Extract language code from filename (e.g., en_us.yaml -> en_us)
+        lang_code = Path(yaml_file).stem
+        if lang_code != "__init__":  # Skip __init__.py if it exists
+            languages.append(lang_code)
+    
+    return sorted(languages)
 
 def setup_argument_parser() -> argparse.ArgumentParser:
     """
@@ -68,11 +89,12 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         help="Path to custom configuration file"
     )
     
-    # Language override
+    # Language override - dynamically detect available languages
+    available_languages = get_available_languages()
     parser.add_argument(
         "--language", "-l",
-        choices=["auto", "en_us", "pt_br"],
-        help="Language override (auto/en_us/pt_br)"
+        choices=available_languages,
+        help=f"Language override ({'/'.join(available_languages)})"
     )
     
     # Debug mode
@@ -266,6 +288,9 @@ def initialize_application(args) -> tuple:
     # Initialize directory manager
     directory_manager = DirectoryManager()
     
+    # Ensure all necessary directories exist
+    directory_manager.ensure_directories()
+    
     # Initialize configuration manager
     config_manager = ConfigManager(args.config)
     
@@ -287,7 +312,25 @@ def initialize_application(args) -> tuple:
     
     # Initialize logging
     log_manager = LogManager(str(directory_manager.get_path('logs')))
-    
+
+    # Setup logging from configuration defaults
+    log_level = config_manager.get('logging', 'level', 'INFO')
+    console_enabled = config_manager.get('logging', 'console_enabled', True)
+    file_enabled = config_manager.get('logging', 'file_enabled', True)
+    max_log_files = config_manager.get('logging', 'max_log_files', 10)
+    max_log_size_mb = config_manager.get('logging', 'max_log_size_mb', 10)
+    try:
+        log_manager.setup_logging(
+            level=log_level,
+            console_enabled=console_enabled,
+            file_enabled=file_enabled,
+            max_log_files=int(max_log_files) if isinstance(max_log_files, (int, str)) else 10,
+            max_log_size=f"{int(max_log_size_mb)} MB" if isinstance(max_log_size_mb, (int, str)) else "10 MB"
+        )
+    except Exception:
+        # Fallback to defaults if config values are invalid
+        log_manager.setup_logging()
+
     # Set debug/quiet modes
     if args.debug:
         log_manager.setup_logging(level="DEBUG")
@@ -295,7 +338,7 @@ def initialize_application(args) -> tuple:
     elif args.quiet:
         log_manager.setup_logging(level="ERROR", console_enabled=False)
         config_manager.set("logging", "console_enabled", False)
-    
+
     # Log application start
     logger.info(f"CLI Download ROM iniciado - {get_version_string()}")
     
@@ -312,6 +355,9 @@ def main():
         
         # Initialize application
         config_manager, directory_manager, log_manager = initialize_application(args)
+        
+        # Log selected interface
+        logger.info(f"Interface selecionada: {args.interface}")
         
         # Check interface availability
         if args.interface == "tui" and not is_tui_available():
@@ -348,12 +394,63 @@ def main():
                     else:
                         cli_args = ['config']
             else:
-                # Prefer unknown tokens (e.g., "search ...", "download ...")
-                if unknown:
-                    cli_args = unknown
-                elif args.command:
-                    # Pass the command token if present; CLIInterface will show help if insufficient
+                # Build CLI args from parsed arguments
+                if args.command:
                     cli_args = [args.command]
+                    
+                    # Add command-specific arguments
+                    if args.command == 'search':
+                        if hasattr(args, 'query') and args.query:
+                            cli_args.append(args.query)
+                        if hasattr(args, 'platform') and args.platform:
+                            cli_args.extend(['--platform', args.platform])
+                        if hasattr(args, 'region') and args.region:
+                            cli_args.extend(['--region', args.region])
+                        if hasattr(args, 'year') and args.year:
+                            cli_args.extend(['--year', str(args.year)])
+                        if hasattr(args, 'limit') and args.limit:
+                            cli_args.extend(['--limit', str(args.limit)])
+                        if hasattr(args, 'format') and args.format:
+                            cli_args.extend(['--format', args.format])
+                    
+                    elif args.command == 'download':
+                        if hasattr(args, 'target') and args.target:
+                            cli_args.append(args.target)
+                        if hasattr(args, 'platform') and args.platform:
+                            cli_args.extend(['--platform', args.platform])
+                        if hasattr(args, 'region') and args.region:
+                            cli_args.extend(['--region', args.region])
+                        if hasattr(args, 'output') and args.output:
+                            cli_args.extend(['--output', args.output])
+                        if hasattr(args, 'all') and args.all:
+                            cli_args.append('--all')
+                        if hasattr(args, 'no_boxart') and args.no_boxart:
+                            cli_args.append('--no-boxart')
+                    
+                    elif args.command == 'info':
+                        if hasattr(args, 'id') and args.id:
+                            cli_args.append(args.id)
+                        if hasattr(args, 'format') and args.format:
+                            cli_args.extend(['--format', args.format])
+                    
+                    elif args.command == 'random':
+                        if hasattr(args, 'platform') and args.platform:
+                            cli_args.extend(['--platform', args.platform])
+                        if hasattr(args, 'region') and args.region:
+                            cli_args.extend(['--region', args.region])
+                        if hasattr(args, 'count') and args.count:
+                            cli_args.extend(['--count', str(args.count)])
+                        if hasattr(args, 'download') and args.download:
+                            cli_args.append('--download')
+                
+                # Add any unknown arguments
+                if unknown:
+                    cli_args.extend(unknown)
+            
+            # Debug logging
+            logger.debug(f"Args parsed: {args}")
+            logger.debug(f"Unknown args: {unknown}")
+            logger.debug(f"CLI args to pass: {cli_args}")
             
             if cli_args:
                 exit_code = interface.run(cli_args)
@@ -384,9 +481,8 @@ def main():
     
     except Exception as e:
         print(f"Error: {e}")
-        if "--debug" in sys.argv:
-            import traceback
-            traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":
