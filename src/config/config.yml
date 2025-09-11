@@ -1,42 +1,78 @@
-api:
-  base_url: 'https://api.crocdb.net'
-  timeout: 30
-  max_retries: 3
-  retry_delay: 1
+# Application configuration file for CLI Download ROM
+# Each option below includes a brief description and the default value from code
+# (defaults shown in parentheses). Values here override the defaults.
 
-download:
-  max_concurrent: 4
-  chunk_size: 8192
-  verify_downloads: true
-  download_boxart: true
-  preferred_hosts: []
-  timeout: 300
+api:
+  # Base URL for the CrocDB API (default: https://api.crocdb.net)
+  base_url: https://api.crocdb.net
+  # Maximum number of retry attempts for failed API requests (default: 3)
+  max_retries: 3
+  # Delay in seconds between retries (default: 1)
+  retry_delay: 1
+  # HTTP request timeout in seconds (default: 30)
+  timeout: 30
 
 cache:
+  # Enable cache for API responses and metadata (default: true)
   enabled: true
-  ttl_hours: 24
+  # Maximum cache size in megabytes (default: 100)
   max_size_mb: 100
-
-interface:
-  language: 'auto'
-  theme: 'default'
-  show_progress: true
-  confirm_downloads: true
-
-logging:
-  level: 'INFO'
-  file_enabled: true
-  console_enabled: true
-  max_log_files: 10
-  max_log_size_mb: 10
+  # Time-to-live for cache entries in hours (default: 24)
+  ttl_hours: 24
 
 directories:
-  roms: 'ROMS'
-  temp: 'TEMP'
-  logs: 'logs'
-  cache: 'cache'
+  # Directory where ROMs are saved (default: ROMS)
+  roms: ROMS
+  # Temporary working directory used during downloads (default: TEMP)
+  temp: TEMP
+  # Directory for log files (default: logs)
+  logs: logs
+  # Note: cache path follows TEMP automatically and is not configurable
+
+download:
+  # Size in bytes of each chunk when streaming downloads (default: 8192)
+  chunk_size: 8192
+  # Whether to download box art alongside ROMs (default: true)
+  download_boxart: true
+  # Maximum number of concurrent downloads (default: 4)
+  max_concurrent: 4
+  # Preferred hostnames to prioritize when mirrors exist (default: [])
+  preferred_hosts: []
+  # Download timeout per file in seconds (default: 300)
+  timeout: 300
+  # Verify downloaded files when checksums/signatures are available (default: true)
+  verify_downloads: true
+
+interface:
+  # Ask for confirmation before starting downloads (default: true)
+  confirm_downloads: true
+  # UI language code; use 'auto' to follow system language (default: auto)
+  language: auto
+  # Show progress bars and live statuses (default: true)
+  show_progress: true
+  # Visual theme name for TUI/GUI (default: default)
+  theme: default
+
+# Example of an invalid/custom section (kept for testing). Safe to remove.
+invalid:
+  key: invalid_value
+
+logging:
+  # Enable logging to the console (default: false)
+  console_enabled: false
+  # Enable logging to a file on disk (default: true)
+  file_enabled: true
+  # Minimum log level: DEBUG, INFO, WARNING, ERROR (default: INFO)
+  level: info
+  # Maximum number of rotated log files to keep (default: 10)
+  max_log_files: 10
+  # Maximum size in megabytes for a single log file before rotation (default: 10)
+  max_log_size_mb: 10
 
 performance:
+  # Whether to test and choose best mirrors before downloading (default: true)
   test_mirrors: true
+  # Mirror testing timeout in seconds (default: 10)
   mirror_test_timeout: 10
-  mirror_test_file_size: 1048576  # 1MB
+  # Size in bytes of the file used to benchmark mirrors (default: 1048576)
+  mirror_test_file_size: 1048576
