@@ -28,6 +28,7 @@ except ImportError:
     print("Install with: pip install prompt-toolkit")
     sys.exit(1)
 
+from loguru import logger
 from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, SearchFilter
 from ..api import CrocDBClient
 from ..download import DownloadManager
@@ -96,8 +97,8 @@ class ShellInterface:
         Returns:
             Configured PromptSession instance
         """
-        # History file
-        history_file = self.dirs.get_path('config') / 'shell_history.txt'
+        # History file now goes to TEMP folder
+        history_file = self.dirs.get_path('temp') / 'shell_history.txt'
         # Ensure directory exists to avoid errors when FileHistory touches the file
         history_file.parent.mkdir(parents=True, exist_ok=True)
         history = FileHistory(str(history_file))
@@ -138,7 +139,7 @@ class ShellInterface:
             'config': {
                 'get': None,
                 'set': None,
-                'list': None,
+                'save': None,
                 'reset': None
             },
             'platforms': None,
@@ -154,10 +155,10 @@ class ShellInterface:
     
     def _register_commands(self) -> Dict[str, Callable]:
         """
-        Register shell commands.
+        Register available commands and their handlers.
         
         Returns:
-            Dictionary mapping command names to functions
+            Dictionary mapping command names to handler functions
         """
         return {
             'search': self._cmd_search,
@@ -176,27 +177,21 @@ class ShellInterface:
     
     def run(self) -> int:
         """
-        Run the interactive shell.
+        Run the interactive shell loop.
         
         Returns:
-            Exit code
+            Exit code (0 for success, non-zero for errors)
         """
+        self._print_welcome()
+        
         try:
-            self._print_welcome()
-            
             while self.running:
                 try:
-                    # Get user input
-                    prompt_text = HTML('<prompt>clidownrom</prompt> <path>></path> ')
-                    user_input = self.session.prompt(prompt_text)
-                    
-                    # Skip empty input
-                    if not user_input.strip():
-                        continue
-                    
-                    # Parse and execute command
-                    self._execute_command(user_input.strip())
-                    
+                    # Show prompt with current path
+                    cwd = os.getcwd()
+                    prompt_text = HTML(f"<prompt>{t('app.name')}</prompt> <path>{cwd}</path> > ")
+                    command_line = self.session.prompt(prompt_text)
+                    self._execute_command(command_line)
                 except KeyboardInterrupt:
                     print("\n" + t('messages.press_enter'))
                     continue
@@ -219,6 +214,8 @@ class ShellInterface:
             command_line: Raw command line input
         """
         try:
+            # Audit log of typed command
+            logger.info(f"[SHELL] command entered: {command_line}")
             # Parse command line
             parts = shlex.split(command_line)
             if not parts:
@@ -288,7 +285,6 @@ class ShellInterface:
                 else:
                     i += 1
             
-            # Create search filter
             search_filter = SearchFilter(
                 platforms=platforms,
                 regions=regions
@@ -296,7 +292,7 @@ class ShellInterface:
             
             print(f"{t('search.searching')}...")
             
-            # Perform search
+            # Execute search
             results = self.search_engine.search(
                 query=query,
                 search_filter=search_filter,
@@ -308,7 +304,7 @@ class ShellInterface:
                 self.current_search_results = []
                 return
             
-            # Store results for later use
+            # Cache results
             self.current_search_results = results.entries
             
             # Display results
@@ -322,7 +318,7 @@ class ShellInterface:
     
     def _cmd_download(self, args: List[str]) -> None:
         """
-        Execute download command.
+        Download ROM(s) based on last search results or ROM ID.
         
         Args:
             args: Command arguments
@@ -344,30 +340,27 @@ class ShellInterface:
                 roms_to_download = self.current_search_results
             
             elif target.isdigit():
-                # Check if it's an index from current results
                 index = int(target)
                 if 1 <= index <= len(self.current_search_results):
                     roms_to_download = [self.current_search_results[index - 1]]
                 else:
-                    # Try as ROM ID
-                    rom_entry = self.api_client.get_rom(target)
-                    if rom_entry:
-                        roms_to_download = [rom_entry]
-                    else:
-                        print(f"{t('rom.not_found')}: {target}")
-                        return
-            
+                    print(f"{t('errors.invalid_input')}: {target}")
+                    return
             else:
-                print(f"{t('errors.invalid_input')}: {target}")
-                return
+                # Assume ROM ID
+                rom_entry = self.api_client.get_rom(target)
+                if rom_entry:
+                    roms_to_download = [rom_entry]
+                else:
+                    print(f"{t('rom.not_found')}: {target}")
+                    return
             
-            # Download ROMs
             successful_downloads = 0
             total_downloads = len(roms_to_download)
             
             if total_downloads > 1:
                 if not confirm(f"Download {total_downloads} ROMs?"):
-                    print(t('messages.cancelled'))
+                    print(t('messages.cancel'))
                     return
             
             for i, rom in enumerate(roms_to_download, 1):
@@ -379,9 +372,9 @@ class ShellInterface:
                         download_boxart=not no_boxart,
                         progress_callback=self._download_progress_callback
                     )
-                    
+
                     if result.success:
-                        print(f"\n{t('download.completed')}: {result.file_path}")
+                        print(f"\n{t('download.completed')}: {result.final_path}")
                         successful_downloads += 1
                     else:
                         print(f"\n{t('download.failed')}: {result.error}")
@@ -389,7 +382,6 @@ class ShellInterface:
                 except Exception as e:
                     print(f"\n{t('download.failed')}: {e}")
             
-            # Summary
             if total_downloads > 1:
                 print(f"\n{t('download.multiple.completed', successful=successful_downloads, total=total_downloads)}")
             
@@ -398,7 +390,7 @@ class ShellInterface:
     
     def _cmd_info(self, args: List[str]) -> None:
         """
-        Execute info command.
+        Show ROM information by ID or index from last search.
         
         Args:
             args: Command arguments
@@ -409,153 +401,125 @@ class ShellInterface:
         
         try:
             target = args[0]
-            rom_entry = None
             
             if target.isdigit():
-                # Check if it's an index from current results
                 index = int(target)
                 if 1 <= index <= len(self.current_search_results):
-                    rom_entry = self.current_search_results[index - 1]
+                    rom = self.current_search_results[index - 1]
+                    self._display_rom_info(rom)
                 else:
-                    # Try as ROM ID
-                    rom_entry = self.api_client.get_rom(target)
-            
-            if not rom_entry:
-                print(f"{t('rom.not_found')}: {target}")
+                    print(f"{t('errors.invalid_input')}: {target}")
                 return
             
-            self._display_rom_info(rom_entry)
-            
+            rom = self.api_client.get_rom(target)
+            if rom:
+                self._display_rom_info(rom)
+            else:
+                print(f"{t('rom.not_found')}: {target}")
         except Exception as e:
             print(f"{t('errors.general')}: {e}")
     
     def _cmd_random(self, args: List[str]) -> None:
         """
-        Execute random command.
+        Get random ROM(s) based on optional filters.
         
         Args:
             args: Command arguments
         """
         try:
-            # Parse arguments
-            platform = None
-            region = None
-            count = 5
-            download = False
+            count = 1
+            platforms = []
+            regions = []
             
-            i = 0
-            while i < len(args):
-                if args[i] == '--platform' or args[i] == '-p':
-                    if i + 1 < len(args):
-                        platform = args[i + 1]
-                        i += 2
-                    else:
-                        print(f"{t('errors.invalid_input')}: --platform requires a value")
-                        return
-                elif args[i] == '--region' or args[i] == '-r':
-                    if i + 1 < len(args):
-                        region = args[i + 1]
-                        i += 2
-                    else:
-                        print(f"{t('errors.invalid_input')}: --region requires a value")
-                        return
-                elif args[i] == '--count' or args[i] == '-c':
-                    if i + 1 < len(args):
-                        try:
-                            count = int(args[i + 1])
+            if args:
+                i = 0
+                while i < len(args):
+                    if args[i] == '--count' or args[i] == '-n':
+                        if i + 1 < len(args):
+                            try:
+                                count = int(args[i + 1])
+                                i += 2
+                            except ValueError:
+                                print(f"{t('errors.invalid_input')}: --count must be a number")
+                                return
+                        else:
+                            print(f"{t('errors.invalid_input')}: --count requires a value")
+                            return
+                    elif args[i] == '--platform' or args[i] == '-p':
+                        if i + 1 < len(args):
+                            platforms.append(args[i + 1])
                             i += 2
-                        except ValueError:
-                            print(f"{t('errors.invalid_input')}: --count must be a number")
+                        else:
+                            print(f"{t('errors.invalid_input')}: --platform requires a value")
+                            return
+                    elif args[i] == '--region' or args[i] == '-r':
+                        if i + 1 < len(args):
+                            regions.append(args[i + 1])
+                            i += 2
+                        else:
+                            print(f"{t('errors.invalid_input')}: --region requires a value")
                             return
                     else:
-                        print(f"{t('errors.invalid_input')}: --count requires a value")
-                        return
-                elif args[i] == '--download' or args[i] == '-d':
-                    download = True
-                    i += 1
-                else:
-                    i += 1
+                        i += 1
             
-            search_filter = SearchFilter(
-                platforms=[platform] if platform else [],
-                regions=[region] if region else []
-            )
+            print(t('search.searching'))
+            results = self.search_engine.get_random(count=count, platforms=platforms, regions=regions)
             
-            print(f"{t('search.searching')}...")
-            
-            random_roms = self.search_engine.get_random_roms(
-                count=count,
-                search_filter=search_filter
-            )
-            
-            if not random_roms:
+            if not results.entries:
                 print(t('search.no_results'))
                 return
             
-            # Store results
-            self.current_search_results = random_roms
-            
-            # Display random ROMs
-            self._display_search_results(random_roms)
-            
-            # Download if requested
-            if download:
-                if confirm(f"Download {len(random_roms)} random ROMs?"):
-                    self._cmd_download(['all'])
-            
+            self._display_search_results(results.entries)
         except Exception as e:
             print(f"{t('errors.general')}: {e}")
     
     def _cmd_config(self, args: List[str]) -> None:
         """
-        Execute config command.
+        Manage configuration values.
         
         Args:
             args: Command arguments
         """
         if not args:
-            print(f"{t('help.usage')}: config <get|set|list|reset> [key] [value]")
+            print(f"{t('help.usage')}: config <get|set|save|reset> [args]")
             return
         
-        action = args[0].lower()
-        
         try:
+            action = args[0].lower()
+            
             if action == 'get':
                 if len(args) < 2:
-                    print(f"{t('help.usage')}: config get <key>")
+                    print(f"{t('help.usage')}: config get <section.key>")
                     return
-                
                 key = args[1]
-                value = self.config.get(key)
-                if value is not None:
-                    print(f"{key}: {value}")
-                else:
-                    print(f"{t('config.invalid')}: {key}")
-            
+                value = self.config.get(key, None)
+                print(f"{key} = {value}")
+                
             elif action == 'set':
                 if len(args) < 3:
-                    print(f"{t('help.usage')}: config set <key> <value>")
+                    print(f"{t('help.usage')}: config set <section.key> <value>")
                     return
-                
                 key = args[1]
                 value = args[2]
+                # Tenta converter números automaticamente
+                if value.isdigit():
+                    value = int(value)
                 self.config.set(key, value)
-                self.config.save_config()
-                print(f"{t('config.saved')}: {key} = {value}")
-            
-            elif action == 'list':
-                config_data = self.config.config
-                self._display_config(config_data)
-            
+                print(t('config.saved'))
+                
+            elif action == 'save':
+                if self.config.save_config():
+                    print(t('config.saved'))
+                else:
+                    print(t('errors.config_error'))
+                
             elif action == 'reset':
-                if confirm("Reset configuration to defaults?"):
-                    self.config.reset_to_defaults()
-                    self.config.save_config()
+                if self.config.create_default_config():
                     print(t('config.reset'))
-            
+                else:
+                    print(t('errors.config_error'))
             else:
                 print(f"{t('errors.invalid_input')}: {action}")
-                
         except Exception as e:
             print(f"{t('errors.general')}: {e}")
     
@@ -567,7 +531,7 @@ class ShellInterface:
             args: Command arguments
         """
         try:
-            if not self.platforms_cache:
+            if self.platforms_cache is None:
                 print(f"{t('platforms.loading')}...")
                 self.platforms_cache = self.search_engine.get_platforms()
             
@@ -579,7 +543,6 @@ class ShellInterface:
                 print(f"\nTotal: {len(self.platforms_cache)} platforms")
             else:
                 print("No platforms available")
-                
         except Exception as e:
             print(f"{t('errors.general')}: {e}")
     
@@ -591,7 +554,7 @@ class ShellInterface:
             args: Command arguments
         """
         try:
-            if not self.regions_cache:
+            if self.regions_cache is None:
                 print(f"{t('regions.loading')}...")
                 self.regions_cache = self.search_engine.get_regions()
             
@@ -615,27 +578,29 @@ class ShellInterface:
             args: Command arguments
         """
         try:
-            history_file = self.dirs.get_path('config') / 'shell_history.txt'
-            if history_file.exists():
-                with open(history_file, 'r', encoding='utf-8') as f:
-                    lines = f.readlines()
-                
-                # Show last 20 commands by default
-                limit = 20
-                if args and args[0].isdigit():
-                    limit = int(args[0])
-                
-                recent_lines = lines[-limit:] if len(lines) > limit else lines
-                
-                print(f"\nCommand History (last {len(recent_lines)}):")
-                print("-" * 40)
-                for i, line in enumerate(recent_lines, 1):
-                    print(f"{i:3d}: {line.strip()}")
-            else:
+            history_file = self.dirs.get_path('temp') / 'shell_history.txt'
+            if not history_file.exists():
                 print("No command history available")
-                
+                return
+            
+            # Default: show last 20 commands
+            num = 20
+            if args and len(args) > 0:
+                try:
+                    num = int(args[0])
+                except ValueError:
+                    print(f"{t('errors.invalid_input')}: {args[0]}")
+                    return
+            
+            with open(history_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # Show last N entries
+            for line in lines[-num:]:
+                print(line.strip())
         except Exception as e:
             print(f"{t('errors.general')}: {e}")
+            self.logger.error(f"History error: {e}")
     
     def _cmd_clear(self, args: List[str]) -> None:
         """
@@ -669,7 +634,7 @@ class ShellInterface:
         print("  exit/quit                   - Exit shell")
         
         print(f"\n{t('help.examples')}:")
-        print("  search \"Super Mario\" --platform snes")
+        print('  search "Super Mario" --platform snes')
         print("  download 1")
         print("  download all --no-boxart")
         print("  random --platform nes --count 3 --download")
@@ -692,59 +657,46 @@ class ShellInterface:
     
     def _display_search_results(self, results: List) -> None:
         """
-        Display search results in a formatted table.
+        Display search results in a formatted way.
         
         Args:
             results: List of ROM entries
         """
-        print(f"\n{'#':<3} {'Title':<40} {'Platform':<15} {'Region':<8} {'Year':<6} {'Size':<10}")
-        print("-" * 90)
+        if not results:
+            print(t('search.no_results'))
+            return
         
-        for i, rom in enumerate(results, 1):
-            title = rom.title[:37] + "..." if len(rom.title) > 40 else rom.title
-            platform = rom.platform[:12] + "..." if len(rom.platform) > 15 else rom.platform
-            size_str = format_file_size(rom.size) if rom.size else 'N/A'
-            year_str = str(rom.year) if rom.year else 'N/A'
-            
-            print(f"{i:<3} {title:<40} {platform:<15} {rom.region:<8} {year_str:<6} {size_str:<10}")
-    
+        print("\n" + t('search.results'))
+        print("=" * 40)
+        for idx, rom in enumerate(results, 1):
+            print(f"{idx:3d}. {rom.title} ({rom.platform}, {rom.region}, {rom.year})")
+        
     def _display_rom_info(self, rom) -> None:
         """
-        Display detailed ROM information.
+        Display detailed information about a ROM.
         
         Args:
             rom: ROM entry
         """
-        print(f"\n{t('rom.info')}:")
-        print("=" * 50)
+        print("\n" + t('rom.info'))
+        print("=" * 40)
         print(f"{t('rom.title')}: {rom.title}")
-        print(f"ID: {rom.slug}")
         print(f"{t('rom.platform')}: {rom.platform}")
-        region_str = rom.regions[0] if rom.regions else 'N/A'
-        print(f"{t('rom.region')}: {region_str}")
-        if hasattr(rom, 'year') and rom.year:
-            print(f"{t('rom.year')}: {rom.year}")
-        size_mb = rom.get_size_mb()
-        if size_mb > 0:
-            print(f"{t('rom.size')}: {size_mb:.1f} MB")
-        if rom.description:
-            print(f"{t('rom.description')}: {rom.description}")
-        if rom.download_links:
-            print(f"{t('rom.links')}: {len(rom.download_links)} available")
-        if rom.boxart_url:
-            print(f"{t('rom.boxart')}: Available")
-    
+        print(f"{t('rom.region')}: {rom.region}")
+        print(f"{t('rom.year')}: {rom.year}")
+        print(f"{t('rom.size')}: {format_file_size(rom.size)}")
+        print(f"{t('rom.description')}: {rom.description}")
+        
     def _display_config(self, config_data: Dict[str, Any], prefix: str = "") -> None:
         """
-        Display configuration data recursively.
+        Display configuration values.
         
         Args:
             config_data: Configuration dictionary
-            prefix: Key prefix for nested values
+            prefix: Prefix for nested keys
         """
         for key, value in config_data.items():
             full_key = f"{prefix}.{key}" if prefix else key
-            
             if isinstance(value, dict):
                 self._display_config(value, full_key)
             else:
@@ -752,36 +704,31 @@ class ShellInterface:
     
     def _download_progress_callback(self, progress) -> None:
         """
-        Callback for download progress updates.
+        Handle download progress updates.
         
         Args:
-            progress: DownloadProgress instance
+            progress: Progress information
         """
-        if progress.total_size > 0:
-            percentage = (progress.downloaded_size / progress.total_size) * 100
-            bar_length = 30
-            filled_length = int(bar_length * progress.downloaded_size // progress.total_size)
-            bar = '█' * filled_length + '-' * (bar_length - filled_length)
-            
-            speed_str = f"{format_file_size(progress.speed)}/s" if progress.speed else "N/A"
-            eta_str = f"{progress.eta}s" if progress.eta else "N/A"
-            
-            print(f"\r[{bar}] {percentage:.1f}% | {format_file_size(progress.downloaded_size)}/{format_file_size(progress.total_size)} | {speed_str} | ETA: {eta_str}", end='', flush=True)
-        else:
-            print(f"\r{t('download.progress')}: {format_file_size(progress.downloaded_size)}", end='', flush=True)
+        try:
+            percent = int(progress.percentage)
+            bar_length = 20
+            filled_length = int(bar_length * percent // 100)
+            bar = '#' * filled_length + '-' * (bar_length - filled_length)
+            status = f"{percent}%"
+            print(f"\r[{bar}] {status}", end='')
+            if percent >= 100:
+                print()
+        except Exception:
+            pass
     
     def _print_welcome(self) -> None:
         """
-        Print welcome message.
+        Print the welcome message when shell starts.
         """
         print(f"\n{t('messages.welcome')}")
-        print(f"{t('app.name')} - {t('interface.shell')}")
-        print("=" * 50)
-        print(f"Type 'help' for available commands.")
-        print(f"Type 'exit' or press Ctrl+D to quit.\n")
     
     def _print_goodbye(self) -> None:
         """
-        Print goodbye message.
+        Print the goodbye message when shell exits.
         """
         print(f"\n{t('messages.goodbye')}")
