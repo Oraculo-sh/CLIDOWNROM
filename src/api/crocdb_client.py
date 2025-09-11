@@ -27,6 +27,9 @@ class ROMEntry:
     boxart_url: Optional[str]
     regions: List[str]
     links: List[Dict[str, Any]]
+    # Campos opcionais que podem ser retornados pela API e são esperados pela UI
+    year: Optional[int] = None
+    description: Optional[str] = None
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ROMEntry':
@@ -38,7 +41,9 @@ class ROMEntry:
             platform=data.get('platform', ''),
             boxart_url=data.get('boxart_url'),
             regions=data.get('regions', []),
-            links=data.get('links', [])
+            links=data.get('links', []),
+            year=data.get('year'),
+            description=data.get('description')
         )
     
     def get_best_download_link(self, preferred_hosts: List[str] = None) -> Optional[Dict[str, Any]]:
@@ -75,6 +80,27 @@ class ROMEntry:
         if best_link and 'size' in best_link:
             return best_link['size'] / (1024 * 1024)
         return 0.0
+
+    # Propriedades de compatibilidade para a UI
+    @property
+    def region(self) -> str:
+        """Retorna uma representação em string das regiões (compatibilidade).
+        Ex.: "US" ou "US, EU" quando há múltiplas regiões.
+        """
+        if not self.regions:
+            return ''
+        return ', '.join(self.regions)
+
+    @property
+    def size(self) -> int:
+        """Retorna o tamanho em bytes do melhor link (compatibilidade com UI)."""
+        best_link = self.get_best_download_link()
+        if best_link and 'size' in best_link:
+            try:
+                return int(best_link['size'])
+            except (TypeError, ValueError):
+                return 0
+        return 0
 
 
 @dataclass
