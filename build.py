@@ -108,8 +108,8 @@ chmod +x "$INSTALL_DIR/clidownrom"
 
 # Adiciona ao PATH se não estiver
 if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
-    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> ~/.bashrc
-    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> ~/.zshrc 2>/dev/null || true
+    echo "export PATH=\"$INSTALL_DIR:\\$PATH\"" >> ~/.bashrc
+    echo "export PATH=\"$INSTALL_DIR:\\$PATH\"" >> ~/.zshrc 2>/dev/null || true
 fi
 
 echo
@@ -165,7 +165,7 @@ clidownrom --help
 ## Desinstalação
 
 ### Windows
-Remova a pasta `%USERPROFILE%\clidownrom` e edite as variáveis de ambiente para remover do PATH.
+Remova a pasta `%USERPROFILE%\\clidownrom` e edite as variáveis de ambiente para remover do PATH.
 
 ### Linux
 Remova o arquivo `~/.local/bin/clidownrom` e edite `~/.bashrc` para remover a linha do PATH.
