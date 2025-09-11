@@ -288,7 +288,11 @@ def initialize_application(args) -> tuple:
     # Initialize directory manager
     directory_manager = DirectoryManager()
     
-    # Ensure all necessary directories exist
+    # Initialize logging manager early to suppress default console logging
+    # Note: We don't add any sinks yet; __init__ removes default handlers.
+    log_manager = LogManager(str(directory_manager.get_path('logs')))
+    
+    # Ensure all necessary directories exist (runs with logging sinks removed)
     directory_manager.ensure_directories()
     
     # Initialize configuration manager
@@ -310,9 +314,6 @@ def initialize_application(args) -> tuple:
         except Exception as e:
             logger.warning(f"Failed to set configured language '{language}', using auto/system detection. Error: {e}")
     
-    # Initialize logging
-    log_manager = LogManager(str(directory_manager.get_path('logs')))
-
     # Setup logging from configuration defaults
     log_level = config_manager.get('logging', 'level', 'INFO')
     console_enabled = config_manager.get('logging', 'console_enabled', True)
@@ -352,7 +353,14 @@ def main():
         # Parse command line arguments
         parser = setup_argument_parser()
         args, unknown = parser.parse_known_args()
-        
+
+        # If executed without any arguments, start Shell interface automatically
+        if len(sys.argv) == 1:
+            config_manager, directory_manager, log_manager = initialize_application(args)
+            interface = ShellInterface(config_manager, directory_manager, log_manager)
+            interface.run()
+            return
+
         # Initialize application
         config_manager, directory_manager, log_manager = initialize_application(args)
         
