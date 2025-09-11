@@ -16,9 +16,8 @@ import sys
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
-from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, SearchFilter
+from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, SearchFilter, DownloadManager
 from ..api import CrocDBClient
-from ..download import DownloadManager
 from ..locales import get_i18n, t
 from ..utils import format_file_size, sanitize_filename
 
@@ -366,13 +365,12 @@ class CLIInterface:
             
             print(f"{t('search.searching')}")
             
-            # Perform search
-            import asyncio
-            results = asyncio.run(self.search_engine.search(
+            # Perform search using synchronous wrapper
+            results = self.search_engine.search_sync(
                 query=args.query,
                 search_filter=search_filter,
                 limit=args.limit
-            ))
+            )
             
             if not results:
                 print(t('search.no_results'))
@@ -415,12 +413,11 @@ class CLIInterface:
                     regions=[args.region] if args.region else []
                 )
                 
-                import asyncio
-                results = asyncio.run(self.search_engine.search(
+                results = self.search_engine.search_sync(
                     query=args.target,
                     search_filter=search_filter,
                     limit=50 if args.all else 1
-                ))
+                )
                 
                 if not results:
                     print(t('search.no_results'))

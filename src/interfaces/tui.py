@@ -86,7 +86,7 @@ except ImportError:
 
 from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, SearchFilter
 from ..api import CrocDBClient, ROMEntry
-from ..download import DownloadManager, DownloadProgress
+from ..core import DownloadManager, DownloadProgress
 from ..locales import get_i18n, t
 from ..utils import format_file_size, sanitize_filename
 
@@ -254,8 +254,7 @@ class SearchScreen(Screen):
     async def _random_async(self, search_filter: SearchFilter) -> None:
         """Get random ROMs asynchronously."""
         try:
-            results = await asyncio.get_event_loop().run_in_executor(
-                None,
+            results = await asyncio.to_thread(
                 self.tui_app.search_engine.get_random_roms,
                 10, search_filter
             )
@@ -391,9 +390,8 @@ class DownloadScreen(Screen):
             log.write_line(f"Starting download: {rom.title}")
             
             try:
-                # Download ROM
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None,
+                # Download ROM using to_thread for Python 3.12 compatibility
+                result = await asyncio.to_thread(
                     self.download_rom_sync,
                     rom
                 )

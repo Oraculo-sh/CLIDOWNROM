@@ -31,7 +31,7 @@ except ImportError:
 from loguru import logger
 from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, SearchFilter
 from ..api import CrocDBClient
-from ..download import DownloadManager
+from ..core import DownloadManager
 from ..locales import get_i18n, t
 from ..utils import format_file_size, sanitize_filename
 from .cli import CLIInterface
@@ -292,25 +292,26 @@ class ShellInterface:
             
             print(f"{t('search.searching')}...")
             
-            # Execute search
-            results = self.search_engine.search(
+            # Execute search (synchronous wrapper)
+            scored_results = self.search_engine.search_sync(
                 query=query,
                 search_filter=search_filter,
                 limit=limit
             )
             
-            if not results.entries:
+            if not scored_results:
                 print(t('search.no_results'))
                 self.current_search_results = []
                 return
             
-            # Cache results
-            self.current_search_results = results.entries
+            # Map to ROM entries and cache
+            entries = [s.rom_entry for s in scored_results]
+            self.current_search_results = entries
             
             # Display results
-            self._display_search_results(results.entries)
+            self._display_search_results(entries)
             
-            print(f"\n{t('search.found.plural', count=len(results.entries))}")
+            print(f"\n{t('search.found.plural', count=len(entries))}")
             print(f"{t('help.usage')}: download <index> or download all")
             
         except Exception as e:
@@ -348,7 +349,7 @@ class ShellInterface:
                     return
             else:
                 # Assume ROM ID
-                rom_entry = self.api_client.get_rom(target)
+                rom_entry = self.api_client.get_entry(target)
                 if rom_entry:
                     roms_to_download = [rom_entry]
                 else:
@@ -411,7 +412,7 @@ class ShellInterface:
                     print(f"{t('errors.invalid_input')}: {target}")
                 return
             
-            rom = self.api_client.get_rom(target)
+            rom = self.api_client.get_entry(target)
             if rom:
                 self._display_rom_info(rom)
             else:
@@ -463,13 +464,18 @@ class ShellInterface:
                         i += 1
             
             print(t('search.searching'))
-            results = self.search_engine.get_random(count=count, platforms=platforms, regions=regions)
+            # Build filter and use sync random wrapper
+            search_filter = SearchFilter(platforms=platforms, regions=regions)
+            results = self.search_engine.get_random_roms_sync(count=count, search_filter=search_filter)
             
-            if not results.entries:
+            if not results:
                 print(t('search.no_results'))
                 return
             
-            self._display_search_results(results.entries)
+            # Optionally cache these as the current results for follow-up commands
+            self.current_search_results = results
+            
+            self._display_search_results(results)
         except Exception as e:
             print(f"{t('errors.general')}: {e}")
     
@@ -533,7 +539,7 @@ class ShellInterface:
         try:
             if self.platforms_cache is None:
                 print(f"{t('platforms.loading')}...")
-                self.platforms_cache = self.search_engine.get_platforms()
+                self.platforms_cache = self.search_engine.get_platforms_sync()
             
             if self.platforms_cache:
                 print(f"\n{t('platforms.available')}:")
@@ -556,7 +562,7 @@ class ShellInterface:
         try:
             if self.regions_cache is None:
                 print(f"{t('regions.loading')}...")
-                self.regions_cache = self.search_engine.get_regions()
+                self.regions_cache = self.search_engine.get_regions_sync()
             
             if self.regions_cache:
                 print(f"\n{t('regions.available')}:")
