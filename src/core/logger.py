@@ -30,8 +30,12 @@ class LogManager:
         self.log_dir.mkdir(parents=True, exist_ok=True)
         
         # Caminhos dos arquivos de log
-        self.lastlog_path = Path.cwd() / "lastlog.txt"
+        # latest.log: sobrescrito a cada execução
+        self.lastlog_path = self.log_dir / "latest.log"
+        # log rotativo por sessão
         self.session_log_path = self._get_session_log_path()
+        # error.log: persistente, apenas erros
+        self.error_log_path = self.log_dir / "error.log"
         
         # Remove configurações padrão do loguru
         logger.remove()
@@ -79,15 +83,18 @@ class LogManager:
                     colorize=True
                 )
             
-            # Configuração do arquivo lastlog (sobrescreve a cada execução)
+            # Configuração de arquivos
             if file_enabled:
-                # Remove lastlog anterior se existir
+                # latest.log (sobrescreve)
                 if self.lastlog_path.exists():
-                    self.lastlog_path.unlink()
-                
+                    try:
+                        self.lastlog_path.unlink()
+                    except Exception:
+                        # Em caso de bloqueio, segue com overwrite via mode="w"
+                        pass
                 logger.add(
                     str(self.lastlog_path),
-                    level="DEBUG",  # Lastlog sempre captura tudo
+                    level="DEBUG",  # latest.log captura tudo
                     format="{time:YYYY-MM-DD HH:mm:ss.SSS} | "
                            "{level: <8} | "
                            "{name}:{function}:{line} - "
@@ -96,7 +103,7 @@ class LogManager:
                     encoding="utf-8"
                 )
                 
-                # Configuração do log da sessão (com rotação)
+                # Log da sessão com rotação
                 logger.add(
                     str(self.session_log_path),
                     level=level,
@@ -109,6 +116,18 @@ class LogManager:
                     compression="zip",
                     encoding="utf-8"
                 )
+                
+                # error.log persistente (apenas erros e acima)
+                logger.add(
+                    str(self.error_log_path),
+                    level="ERROR",
+                    format="{time:YYYY-MM-DD HH:mm:ss.SSS} | "
+                           "{level: <8} | "
+                           "{name}:{function}:{line} - "
+                           "{message}",
+                    mode="a",
+                    encoding="utf-8"
+                )
             
             self._configured = True
             logger.info("Sistema de logging configurado com sucesso")
@@ -117,8 +136,9 @@ class LogManager:
             logger.info(f"Arquivo habilitado: {file_enabled}")
             
             if file_enabled:
-                logger.info(f"Lastlog: {self.lastlog_path}")
+                logger.info(f"Latest log: {self.lastlog_path}")
                 logger.info(f"Log da sessão: {self.session_log_path}")
+                logger.info(f"Error log: {self.error_log_path}")
             
             return True
             
@@ -235,6 +255,46 @@ class LogManager:
             error_str = f" - {error}" if error else ""
             logger.error(f"Falha na verificação de arquivo: {filename}{error_str}")
     
+    def debug(self, message: str):
+        """Registra uma mensagem de debug.
+        
+        Args:
+            message: Mensagem a ser registrada
+        """
+        logger.debug(message)
+    
+    def info(self, message: str):
+        """Registra uma mensagem informativa.
+        
+        Args:
+            message: Mensagem a ser registrada
+        """
+        logger.info(message)
+    
+    def warning(self, message: str):
+        """Registra uma mensagem de aviso.
+        
+        Args:
+            message: Mensagem a ser registrada
+        """
+        logger.warning(message)
+    
+    def error(self, message: str):
+        """Registra uma mensagem de erro.
+        
+        Args:
+            message: Mensagem a ser registrada
+        """
+        logger.error(message)
+    
+    def critical(self, message: str):
+        """Registra uma mensagem crítica.
+        
+        Args:
+            message: Mensagem a ser registrada
+        """
+        logger.critical(message)
+
     def _format_size(self, size_bytes: int) -> str:
         """Formata o tamanho em bytes para uma string legível.
         
@@ -261,9 +321,11 @@ class LogManager:
         """
         log_files = []
         
-        # Adiciona lastlog se existir
+        # Adiciona latest.log e error.log se existirem
         if self.lastlog_path.exists():
             log_files.append(self.lastlog_path)
+        if self.error_log_path.exists():
+            log_files.append(self.error_log_path)
         
         # Adiciona logs da sessão
         if self.log_dir.exists():

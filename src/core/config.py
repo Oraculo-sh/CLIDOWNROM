@@ -14,6 +14,7 @@ import yaml
 from pathlib import Path
 from typing import Dict, Any, Optional
 from loguru import logger
+from copy import deepcopy
 
 
 class ConfigManager:
@@ -55,8 +56,8 @@ class ConfigManager:
         'directories': {
             'roms': 'ROMS',
             'temp': 'TEMP',
-            'logs': 'logs',
-            'cache': 'cache'
+            'logs': 'logs'
+            # 'cache' removido: agora segue automaticamente o diretório TEMP
         },
         'performance': {
             'test_mirrors': True,
@@ -72,40 +73,37 @@ class ConfigManager:
             config_path: Caminho para o arquivo de configuração personalizado.
         """
         self.config_path = Path(config_path) if config_path else self._get_default_config_path()
-        self.config = self.DEFAULT_CONFIG.copy()
-        self.user_config_path = self._get_user_config_path()
+        self.config = deepcopy(self.DEFAULT_CONFIG)
+        # Snapshot do estado carregado para detecção de mudanças
+        self._loaded_snapshot: Dict[str, Any] = {}
         self.load_config()
+        # guarda snapshot após carregar/validar
+        self._loaded_snapshot = deepcopy(self.config)
     
     def _get_default_config_path(self) -> Path:
         """Retorna o caminho padrão do arquivo de configuração."""
         return Path.cwd() / 'src' / 'config' / 'config.yml'
 
-    def _get_user_config_path(self) -> Path:
-        """Retorna o caminho do arquivo de configuração do usuário."""
-        return Path.cwd() / 'src' / 'config' / 'user_config.yml'
-    
     def load_config(self) -> bool:
-        """Carrega as configurações dos arquivos.
+        """Carrega as configurações do arquivo e ambiente.
         
         Returns:
             True se as configurações foram carregadas com sucesso.
         """
         try:
-            # Carrega configuração padrão se existir
+            # Começa pelos defaults em código
+            self.config = deepcopy(self.DEFAULT_CONFIG)
+
+            # Carrega overrides de config.yml (se existir)
             if self.config_path.exists():
                 with open(self.config_path, 'r', encoding='utf-8') as f:
-                    default_config = yaml.safe_load(f)
-                    if default_config:
-                        self._merge_config(self.config, default_config)
-                        logger.info(f"Configuração padrão carregada: {self.config_path}")
-            
-            # Carrega configuração do usuário se existir
-            if self.user_config_path.exists():
-                with open(self.user_config_path, 'r', encoding='utf-8') as f:
-                    user_config = yaml.safe_load(f)
-                    if user_config:
-                        self._merge_config(self.config, user_config)
-                        logger.info(f"Configuração do usuário carregada: {self.user_config_path}")
+                    file_config = yaml.safe_load(f)
+                    if file_config:
+                        self._merge_config(self.config, file_config)
+                        logger.info(f"Configuração carregada: {self.config_path}")
+            else:
+                # Aviso quando arquivo não existir; seguir com defaults e env vars
+                logger.warning(f"Arquivo de configuração não encontrado em {self.config_path}. Usando valores padrão em memória.")
             
             # Carrega variáveis de ambiente
             self._load_env_variables()
@@ -161,8 +159,9 @@ class ConfigManager:
 
     # +++ NEW: language normalization helper +++
     def _normalize_language(self, lang: Any) -> str:
-        """Normaliza o código de idioma para o formato suportado (auto, en_us, pt_br).
-        Aceita variações como en, pt, en-US, pt-BR e faz o mapeamento apropriado.
+        """Normaliza o código de idioma para o formato suportado.
+        Aceita variações como en, pt, es, ru, hi, ja, zh e formatos com hífen
+        (ex.: en-US, pt-BR, es-ES), mapeando para códigos canônicos.
         """
         try:
             s = str(lang).strip().lower()
@@ -171,21 +170,41 @@ class ConfigManager:
         if not s:
             return 'auto'
         s = s.replace('-', '_')
-        # Mapear formas antigas/curtas
-        if s == 'en':
-            s = 'en_us'
-        elif s == 'pt':
-            s = 'pt_br'
-        # Conjunto de idiomas atualmente suportados
-        supported = {'en_us', 'pt_br'}
-        return s if s in supported or s == 'auto' else 'auto'
+
+        # Aliases curtos para códigos canônicos
+        short_aliases = {
+            'en': 'en_us',
+            'pt': 'pt_br',
+            'es': 'es_es',
+            'ru': 'ru_ru',
+            'hi': 'hi_in',
+            'ja': 'ja_jp',
+            'zh': 'zh_cn',  # padrão para simplificado
+        }
+        if s in short_aliases:
+            s = short_aliases[s]
+
+        # Conjunto de idiomas suportados
+        supported = {
+            'en_us',
+            'pt_br',
+            'es_es',
+            'ru_ru',
+            'hi_in',
+            'ja_jp',
+            'zh_cn',
+        }
+        return s if (s in supported or s == 'auto') else 'auto'
 
     def _validate_config(self):
         """Valida as configurações carregadas."""
         # Valida URL da API
         api_url = self.config['api']['base_url']
-        if not api_url.startswith(('http://', 'https://')):
-            raise ValueError(f"URL da API inválida: {api_url}")
+        if not isinstance(api_url, str) or not api_url.startswith(('http://', 'https://')):
+            logger.warning(
+                f"URL da API inválida: {api_url}. Usando valor padrão: {self.DEFAULT_CONFIG['api']['base_url']}"
+            )
+            self.config['api']['base_url'] = self.DEFAULT_CONFIG['api']['base_url']
         
         # Valida valores numéricos
         numeric_validations = [
@@ -222,26 +241,28 @@ class ConfigManager:
         else:
             self.config['logging']['level'] = log_level
     
-    def save_config(self, user_config: bool = True) -> bool:
-        """Salva as configurações em arquivo.
+    def save_config(self) -> bool:
+        """Salva as configurações em arquivo somente se houver mudanças desde o último carregamento.
         
-        Args:
-            user_config: Se True, salva como configuração do usuário.
-            
         Returns:
-            True se as configurações foram salvas com sucesso.
+            True se as configurações foram salvas com sucesso ou não havia mudanças.
         """
         try:
-            target_path = self.user_config_path if user_config else self.config_path
+            # Se não houve mudanças, não grava
+            if self._loaded_snapshot == self.config:
+                logger.debug("Nenhuma alteração na configuração; não é necessário salvar.")
+                return True
+
+            # Garante que o diretório exista
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
             
-            # Garante que o diretório existe
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            with open(target_path, 'w', encoding='utf-8') as f:
+            with open(self.config_path, 'w', encoding='utf-8') as f:
                 yaml.dump(self.config, f, default_flow_style=False, 
                          allow_unicode=True, indent=2)
             
-            logger.info(f"Configurações salvas: {target_path}")
+            logger.info(f"Configurações salvas: {self.config_path}")
+            # Atualiza snapshot após salvar
+            self._loaded_snapshot = deepcopy(self.config)
             return True
             
         except Exception as e:
@@ -358,7 +379,7 @@ class ConfigManager:
         Returns:
             Dicionário com todas as configurações.
         """
-        return self.config.copy()
+        return deepcopy(self.config)
     
     def reset_to_defaults(self) -> bool:
         """Reseta as configurações para os valores padrão.
@@ -367,7 +388,7 @@ class ConfigManager:
             True se as configurações foram resetadas com sucesso.
         """
         try:
-            self.config = self.DEFAULT_CONFIG.copy()
+            self.config = deepcopy(self.DEFAULT_CONFIG)
             logger.info("Configurações resetadas para valores padrão")
             return True
             

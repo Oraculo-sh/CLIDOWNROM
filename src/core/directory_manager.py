@@ -38,7 +38,8 @@ class DirectoryManager:
             'temp_test': self.base_path / 'TEMP' / 'teste',
             'logs': self.base_path / 'logs',
             'config': self.base_path / 'src' / 'config',
-            'cache': self.base_path / 'cache',
+            # Cache agora segue automaticamente o diretório TEMP
+            'cache': self.base_path / 'TEMP' / 'cache',
             'locales': self.base_path / 'src' / 'locales'
         }
     

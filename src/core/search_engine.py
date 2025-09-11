@@ -84,7 +84,9 @@ class SearchEngine:
         """
         if self.platforms_cache is None:
             try:
-                self.platforms_cache = await self.api_client.get_platforms()
+                # CrocDBClient.get_platforms() é síncrono e retorna um dicionário {code: {name: ...}}
+                platforms_dict = self.api_client.get_platforms() or {}
+                self.platforms_cache = list(platforms_dict.keys())
                 logger.debug(f"Plataformas carregadas: {len(self.platforms_cache)}")
             except Exception as e:
                 logger.error(f"Erro ao carregar plataformas: {e}")
@@ -100,7 +102,9 @@ class SearchEngine:
         """
         if self.regions_cache is None:
             try:
-                self.regions_cache = await self.api_client.get_regions()
+                # CrocDBClient.get_regions() é síncrono e retorna um dicionário {code: name}
+                regions_dict = self.api_client.get_regions() or {}
+                self.regions_cache = list(regions_dict.keys())
                 logger.debug(f"Regiões carregadas: {len(self.regions_cache)}")
             except Exception as e:
                 logger.error(f"Erro ao carregar regiões: {e}")
@@ -562,17 +566,17 @@ class SearchEngine:
             Lista de ROMs ordenadas por relevância
         """
         import asyncio
+        import concurrent.futures
         try:
-            # Executa a versão assíncrona de forma síncrona
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Se já estamos em um loop, cria uma nova task
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, self.search(query, search_filter, limit))
-                    return future.result()
-            else:
-                return asyncio.run(self.search(query, search_filter, limit))
+            # Executa a versão assíncrona de forma síncrona (compatível com Python 3.12)
+            asyncio.get_running_loop()
+            # Já estamos em um loop: offload para thread separada
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, self.search(query, search_filter, limit))
+                return future.result()
+        except RuntimeError:
+            # Sem loop em andamento: podemos rodar diretamente
+            return asyncio.run(self.search(query, search_filter, limit))
         except Exception as e:
             logger.error(f"Erro na busca síncrona: {e}")
             return []
@@ -588,17 +592,14 @@ class SearchEngine:
             Lista de ROMs aleatórias
         """
         import asyncio
+        import concurrent.futures
         try:
-            # Executa a versão assíncrona de forma síncrona
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Se já estamos em um loop, cria uma nova task
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, self.search_random(search_filter, count))
-                    return future.result()
-            else:
-                return asyncio.run(self.search_random(search_filter, count))
+            asyncio.get_running_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, self.search_random(search_filter, count))
+                return future.result()
+        except RuntimeError:
+            return asyncio.run(self.search_random(search_filter, count))
         except Exception as e:
             logger.error(f"Erro na busca aleatória síncrona: {e}")
             return []
@@ -615,6 +616,45 @@ class SearchEngine:
         """
         return self.get_random_roms_sync(count, search_filter)
     
+    def get_platforms_sync(self) -> List[str]:
+        """Obtém a lista de plataformas (versão síncrona)."""
+        # Fast path: return from cache if available
+        if self.platforms_cache is not None:
+            return self.platforms_cache
+        import asyncio
+        import concurrent.futures
+        try:
+            # Python 3.12: get_running_loop() raises if no loop is running
+            asyncio.get_running_loop()
+            # We are inside a running loop; offload to a separate thread
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, self.get_platforms())
+                return future.result() or []
+        except RuntimeError:
+            # No running loop; safe to run directly
+            return asyncio.run(self.get_platforms()) or []
+        except Exception as e:
+            logger.error(f"Erro ao obter plataformas (síncrono): {e}")
+            return []
+
+    def get_regions_sync(self) -> List[str]:
+        """Obtém a lista de regiões (versão síncrona)."""
+        # Fast path: return from cache if available
+        if self.regions_cache is not None:
+            return self.regions_cache
+        import asyncio
+        import concurrent.futures
+        try:
+            asyncio.get_running_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, self.get_regions())
+                return future.result() or []
+        except RuntimeError:
+            return asyncio.run(self.get_regions()) or []
+        except Exception as e:
+            logger.error(f"Erro ao obter regiões (síncrono): {e}")
+            return []
+    
     async def get_rom_info(self, rom_id: str) -> Optional[ROMEntry]:
         """Obtém informações detalhadas de uma ROM.
         
@@ -625,7 +665,8 @@ class SearchEngine:
             Entrada da ROM ou None
         """
         try:
-            return await self.api_client.get_rom_entry(rom_id)
+            # CrocDBClient methods are synchronous; use get_entry(slug) directly.
+            return self.api_client.get_entry(rom_id)
         except Exception as e:
             logger.error(f"Erro ao obter informações da ROM {rom_id}: {e}")
             return None

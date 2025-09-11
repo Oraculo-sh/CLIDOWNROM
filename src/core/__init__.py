@@ -16,6 +16,7 @@ from .directory_manager import DirectoryManager
 from .config import ConfigManager
 from .logger import LogManager
 from .search_engine import SearchEngine, SearchFilter, ROMScore
+from .download_manager import DownloadManager, DownloadProgress, DownloadResult, MirrorTester
 
 __all__ = [
     'DirectoryManager',
@@ -23,7 +24,11 @@ __all__ = [
     'LogManager',
     'SearchEngine',
     'SearchFilter',
-    'ROMScore'
+    'ROMScore',
+    'DownloadManager',
+    'DownloadProgress',
+    'DownloadResult',
+    'MirrorTester'
 ]
 
 __author__ = "Leonne Martins (@Oraculo-sh)"
