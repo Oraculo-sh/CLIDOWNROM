@@ -14,7 +14,7 @@ __email__ = "leonne.martins@outlook.com"
 __license__ = "GPL-3.0"
 __copyright__ = "Copyright (c) 2024 Leonne Martins"
 __url__ = "https://github.com/Oraculo-sh/CLIDOWNROM"
-__description__ = "Cliente avançado para API CrocDB com múltiplas interfaces"
+__description__ = "Advanced CrocDB API client with multiple interfaces"
 
 # Build information
 __build_date__ = "2024-01-01"
