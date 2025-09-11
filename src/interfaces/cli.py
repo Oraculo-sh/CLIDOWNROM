@@ -11,6 +11,7 @@ License: GPL-3.0
 """
 
 import argparse
+import asyncio
 import sys
 from typing import List, Optional, Dict, Any
 from pathlib import Path
@@ -83,25 +84,25 @@ class CLIInterface:
         parser.add_argument(
             '--config', '-c',
             type=str,
-            help='Path to configuration file'
+            help=t('help_texts.config_path')
         )
         
         parser.add_argument(
             '--verbose',
             action='store_true',
-            help='Enable verbose output'
+            help=t('help_texts.verbose')
         )
         
         parser.add_argument(
             '--quiet', '-q',
             action='store_true',
-            help='Suppress output except errors'
+            help=t('help_texts.quiet')
         )
         
         # Create subparsers for commands
         subparsers = parser.add_subparsers(
             dest='command',
-            help='Available commands',
+            help=t('help.commands'),
             metavar='COMMAND'
         )
         
@@ -109,174 +110,174 @@ class CLIInterface:
         search_parser = subparsers.add_parser(
             'search',
             help=t('commands.search'),
-            description='Search for ROMs in the CrocDB database'
+            description=t('help_texts.search.description')
         )
         search_parser.add_argument(
             'query',
             type=str,
-            help='Search query (game title)'
+            help=t('help_texts.search.query')
         )
         search_parser.add_argument(
             '--platform', '-p',
             type=str,
             action='append',
-            help='Filter by platform (can be used multiple times)'
+            help=t('help_texts.search.platform')
         )
         search_parser.add_argument(
             '--region', '-r',
             type=str,
             action='append',
-            help='Filter by region (can be used multiple times)'
+            help=t('help_texts.search.region')
         )
         search_parser.add_argument(
             '--year',
             type=int,
-            help='Filter by year'
+            help=t('help_texts.search.year')
         )
         search_parser.add_argument(
             '--limit', '-l',
             type=int,
             default=10,
-            help='Maximum number of results (default: 10)'
+            help=t('help_texts.search.limit', default=10)
         )
         search_parser.add_argument(
             '--format', '-f',
             choices=['table', 'json', 'csv'],
             default='table',
-            help='Output format (default: table)'
+            help=t('help_texts.search.format', default='table')
         )
         
         # Download command
         download_parser = subparsers.add_parser(
             'download',
             help=t('commands.download'),
-            description='Download ROMs by ID or search query'
+            description=t('help_texts.download.description')
         )
         download_parser.add_argument(
             'target',
             type=str,
-            help='ROM ID or search query'
+            help=t('help_texts.download.target')
         )
         download_parser.add_argument(
             '--platform', '-p',
             type=str,
-            help='Platform filter (when using search query)'
+            help=t('help_texts.download.platform')
         )
         download_parser.add_argument(
             '--region', '-r',
             type=str,
-            help='Region filter (when using search query)'
+            help=t('help_texts.download.region')
         )
         download_parser.add_argument(
             '--all', '-a',
             action='store_true',
-            help='Download all search results'
+            help=t('help_texts.download.all')
         )
         download_parser.add_argument(
             '--no-boxart',
             action='store_true',
-            help='Skip downloading box art'
+            help=t('help_texts.download.no_boxart')
         )
         download_parser.add_argument(
             '--output', '-o',
             type=str,
-            help='Custom output directory'
+            help=t('help_texts.download.output')
         )
         
         # Info command
         info_parser = subparsers.add_parser(
             'info',
             help=t('commands.info'),
-            description='Show detailed information about a ROM'
+            description=t('help_texts.info.description')
         )
         info_parser.add_argument(
             'rom_id',
             type=str,
-            help='ROM ID'
+            help=t('help_texts.info.rom_id')
         )
         info_parser.add_argument(
             '--format', '-f',
             choices=['table', 'json'],
             default='table',
-            help='Output format (default: table)'
+            help=t('help_texts.info.format', default='table')
         )
         
         # Random command
         random_parser = subparsers.add_parser(
             'random',
             help=t('commands.random'),
-            description='Get random ROMs'
+            description=t('help_texts.random.description')
         )
         random_parser.add_argument(
             '--platform', '-p',
             type=str,
-            help='Filter by platform'
+            help=t('help_texts.random.platform')
         )
         random_parser.add_argument(
             '--region', '-r',
             type=str,
-            help='Filter by region'
+            help=t('help_texts.random.region')
         )
         random_parser.add_argument(
             '--count', '-c',
             type=int,
             default=5,
-            help='Number of random ROMs (default: 5)'
+            help=t('help_texts.random.count', default=5)
         )
         random_parser.add_argument(
             '--download', '-d',
             action='store_true',
-            help='Download the random ROMs'
+            help=t('help_texts.random.download')
         )
         
         # Config command
         config_parser = subparsers.add_parser(
             'config',
             help=t('commands.config'),
-            description='Manage application configuration'
+            description=t('help_texts.config.description')
         )
         config_subparsers = config_parser.add_subparsers(
             dest='config_action',
-            help='Configuration actions'
+            help=t('help_texts.config.actions')
         )
         
         # Config get
         config_get = config_subparsers.add_parser(
             'get',
-            help='Get configuration value'
+            help=t('help_texts.config.get')
         )
         config_get.add_argument(
             'key',
             type=str,
-            help='Configuration key'
+            help=t('help_texts.config.key')
         )
         
         # Config set
         config_set = config_subparsers.add_parser(
             'set',
-            help='Set configuration value'
+            help=t('help_texts.config.set')
         )
         config_set.add_argument(
             'key',
             type=str,
-            help='Configuration key'
+            help=t('help_texts.config.key')
         )
         config_set.add_argument(
             'value',
             type=str,
-            help='Configuration value'
+            help=t('help_texts.config.value')
         )
         
         # Config list
         config_subparsers.add_parser(
             'list',
-            help='List all configuration values'
+            help=t('help_texts.config.list')
         )
         
         # Config reset
         config_subparsers.add_parser(
             'reset',
-            help='Reset configuration to defaults'
+            help=t('help_texts.config.reset')
         )
         
         return parser
@@ -402,7 +403,7 @@ class CLIInterface:
             # Check if target is a ROM ID or search query
             if args.target.isdigit():
                 # Direct ROM ID
-                rom_entry = self.api_client.get_rom(args.target)
+                rom_entry = self.api_client.get_entry(args.target)
                 if not rom_entry:
                     print(f"{t('rom.not_found')}: {args.target}")
                     return 1
@@ -414,17 +415,19 @@ class CLIInterface:
                     regions=[args.region] if args.region else []
                 )
                 
-                results = self.search_engine.search(
+                import asyncio
+                results = asyncio.run(self.search_engine.search(
                     query=args.target,
                     search_filter=search_filter,
                     limit=50 if args.all else 1
-                )
+                ))
                 
-                if not results.entries:
+                if not results:
                     print(t('search.no_results'))
                     return 0
                 
-                roms_to_download = results.entries if args.all else [results.entries[0]]
+                rom_entries = [rom.rom_entry for rom in results]
+                roms_to_download = rom_entries if args.all else [rom_entries[0]]
             
             # Download ROMs
             successful_downloads = 0
@@ -435,18 +438,17 @@ class CLIInterface:
                 
                 # Set custom output directory if specified
                 if args.output:
-                    original_roms_dir = self.dirs.roms_dir
-                    self.dirs.roms_dir = Path(args.output)
+                    original_roms_dir = self.dirs.paths['roms']
+                    self.dirs.paths['roms'] = Path(args.output)
                 
                 try:
-                    result = self.download_manager.download_rom(
+                    result = asyncio.run(self.download_manager.download_rom(
                         rom,
-                        download_boxart=not args.no_boxart,
-                        progress_callback=self._download_progress_callback
-                    )
+                        download_boxart=not args.no_boxart
+                    ))
                     
                     if result.success:
-                        print(f"\n{t('download.completed')}: {result.file_path}")
+                        print(f"\n{t('download.completed')}: {result.final_path}")
                         successful_downloads += 1
                     else:
                         print(f"\n{t('download.failed')}: {result.error}")
@@ -457,7 +459,7 @@ class CLIInterface:
                 finally:
                     # Restore original directory
                     if args.output:
-                        self.dirs.roms_dir = original_roms_dir
+                        self.dirs.paths['roms'] = original_roms_dir
             
             # Summary
             if total_downloads > 1:
@@ -480,7 +482,7 @@ class CLIInterface:
             Exit code
         """
         try:
-            rom_entry = self.api_client.get_rom(args.rom_id)
+            rom_entry = self.api_client.get_entry(args.rom_id)
             if not rom_entry:
                 print(f"{t('rom.not_found')}: {args.rom_id}")
                 return 1
@@ -531,13 +533,12 @@ class CLIInterface:
                     print(f"\n[{i}/{len(random_roms)}] {t('download.starting')}: {rom.title}")
                     
                     try:
-                        result = self.download_manager.download_rom(
-                            rom,
-                            progress_callback=self._download_progress_callback
-                        )
+                        result = asyncio.run(self.download_manager.download_rom(
+                            rom
+                        ))
                         
                         if result.success:
-                            print(f"\n{t('download.completed')}: {result.file_path}")
+                            print(f"\n{t('download.completed')}: {result.final_path}")
                             successful_downloads += 1
                         else:
                             print(f"\n{t('download.failed')}: {result.error}")
@@ -632,17 +633,18 @@ class CLIInterface:
         
         else:  # table format
             # Simple table display
-            print(f"\n{'ID':<8} {'Title':<40} {'Platform':<15} {'Region':<8} {'Year':<6} {'Size':<10}")
-            print("-" * 95)
+            print(f"\n{'Slug':<20} {'Title':<40} {'Platform':<15} {'Region':<8} {'Year':<6} {'Size':<10}")
+            print("-" * 107)
             
-            for i, rom in enumerate(results, 1):
+            for rom in results:
                 title = rom.title[:37] + "..." if len(rom.title) > 40 else rom.title
                 platform = rom.platform[:12] + "..." if len(rom.platform) > 15 else rom.platform
                 size_mb = rom.get_size_mb()
                 size_str = f"{size_mb:.1f}MB" if size_mb > 0 else 'N/A'
                 region_str = rom.regions[0] if rom.regions else 'N/A'
+                slug_str = rom.slug[:17] + "..." if len(rom.slug) > 20 else rom.slug
                 
-                print(f"{i:<8} {title:<40} {platform:<15} {region_str:<8} {'N/A':<6} {size_str:<10}")
+                print(f"{slug_str:<20} {title:<40} {platform:<15} {region_str:<8} {'N/A':<6} {size_str:<10}")
     
     def _display_rom_info(self, rom, format_type: str) -> None:
         """
@@ -655,14 +657,13 @@ class CLIInterface:
         if format_type == 'json':
             import json
             data = {
-                'id': rom.id,
+                'slug': rom.slug,
+                'rom_id': rom.rom_id,
                 'title': rom.title,
                 'platform': rom.platform,
-                'region': rom.region,
-                'year': rom.year,
-                'size': rom.size,
-                'description': rom.description,
-                'download_links': rom.download_links,
+                'regions': rom.regions,
+                'size_mb': rom.get_size_mb(),
+                'links': rom.links,
                 'boxart_url': rom.boxart_url
             }
             print(json.dumps(data, indent=2))
@@ -671,19 +672,20 @@ class CLIInterface:
             print(f"\n{t('rom.info')}:")
             print("-" * 50)
             print(f"{t('rom.title')}: {rom.title}")
-            print(f"ID: {rom.id}")
+            print(f"Slug: {rom.slug}")
+            if rom.rom_id:
+                print(f"ROM ID: {rom.rom_id}")
             print(f"{t('rom.platform')}: {rom.platform}")
-            print(f"{t('rom.region')}: {rom.region}")
-            if rom.year:
-                print(f"{t('rom.year')}: {rom.year}")
-            if rom.size:
-                print(f"{t('rom.size')}: {format_file_size(rom.size)}")
-            if rom.description:
-                print(f"{t('rom.description')}: {rom.description}")
-            if rom.download_links:
-                print(f"{t('rom.links')}: {len(rom.download_links)} available")
+            if rom.regions:
+                regions_str = ', '.join(rom.regions)
+                print(f"Regiões: {regions_str}")
+            size_mb = rom.get_size_mb()
+            if size_mb > 0:
+                print(f"Tamanho: {size_mb:.1f}MB")
+            if rom.links:
+                print(f"Links de download: {len(rom.links)} disponíveis")
             if rom.boxart_url:
-                print(f"{t('rom.boxart')}: Available")
+                print(f"Boxart: Disponível")
     
     def _display_config(self, config_data: Dict[str, Any], prefix: str = "") -> None:
         """
