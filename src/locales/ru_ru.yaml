@@ -4,13 +4,12 @@ app:
   version: Version {version}
   author: 'Author: {author}'
   license: 'License: {license}'
-  translator: 'Translator: {translator}'
 commands:
-  search: Search ROMs
+  search: Search for ROMs
   download: Download ROMs
-  info: ROM Info
-  random: Random
-  config: Config
+  info: Show ROM information
+  random: Get random ROMs
+  config: Manage configuration
   help: Show help
   exit: Exit application
   quit: Quit application
@@ -204,40 +203,3 @@ system:
   python_version: Python Version
   disk_space: Available Disk Space
   memory: Memory Usage
-help_texts:
-  config_path: "Path to custom configuration file"
-  verbose: "Enable verbose output"
-  quiet: "Suppress output except errors"
-  search:
-    description: "Search for ROMs in the CrocDB database"
-    query: "Search query (game title)"
-    platform: "Filter by platform (can be used multiple times)"
-    region: "Filter by region (can be used multiple times)"
-    year: "Filter by year"
-    limit: "Maximum number of results (default: {default})"
-    format: "Output format (default: {default})"
-  download:
-    description: "Download ROMs by ID or search query"
-    target: "ROM ID or search query"
-    platform: "Platform filter (when using search query)"
-    region: "Region filter (when using search query)"
-    all: "Download all search results"
-    no_boxart: "Skip downloading box art"
-    output: "Custom output directory"
-  info:
-    description: "Show detailed information about a ROM"
-    rom_id: "ROM ID"
-    format: "Output format (default: {default})"
-  random:
-    description: "Get random ROMs"
-    platform: "Filter by platform"
-    region: "Filter by region"
-    count: "Number of random ROMs (default: {default})"
-    download: "Download the random ROMs"
-  config:
-    description: "Manage application configuration"
-    actions: "Configuration actions"
-    get: "Get configuration value"
-    set: "Set configuration value"
-    list: "List all configuration values"
-    reset: "Reset configuration to defaults"

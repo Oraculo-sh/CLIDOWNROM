@@ -203,3 +203,40 @@ system:
   python_version: Versão do Python
   disk_space: Espaço Disponível em Disco
   memory: Uso de Memória
+help_texts:
+  config_path: Caminho para arquivo de configuração personalizado
+  verbose: Habilitar saída detalhada
+  quiet: Modo silencioso - saída mínima
+  search:
+    description: Buscar ROMs na base de dados
+    query: Termo de busca para ROMs
+    platform: Filtrar por plataforma específica
+    region: Filtrar por região específica
+    year: Filtrar por ano de lançamento
+    limit: Número máximo de resultados (padrão {default})
+    format: Formato de saída (padrão {default})
+  download:
+    description: Baixar ROMs da base de dados
+    target: ID da ROM ou termo de busca para baixar
+    platform: Baixar todas as ROMs da plataforma
+    region: Filtrar por região ao baixar por plataforma
+    all: Baixar todas as ROMs disponíveis (use com cuidado!)
+    no_boxart: Pular download das capas
+    output: Diretório de saída personalizado
+  info:
+    description: Obter informações detalhadas da ROM
+    rom_id: ID da ROM para obter informações
+  random:
+    description: Obter ROMs aleatórias
+    platform: Filtrar por plataforma específica
+    region: Filtrar por região específica
+    count: Número de ROMs aleatórias (padrão {default})
+    download: Baixar as ROMs aleatórias
+  config:
+    description: Gerenciar configurações da aplicação
+    get: Obter valor de configuração
+    set: Definir valor de configuração
+    list: Listar todos os valores de configuração
+    reset: Restaurar configuração para padrões
+    key: Chave de configuração
+    value: Valor de configuração

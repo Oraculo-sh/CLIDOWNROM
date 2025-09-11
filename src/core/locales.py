@@ -165,7 +165,7 @@ class I18nManager:
         return sorted(languages)
     
     def get_language_name(self, language_code: str) -> str:
-        """Obtém nome do idioma.
+        """Obtém nome do idioma dinamicamente dos arquivos de tradução.
         
         Args:
             language_code: Código do idioma
@@ -173,7 +173,32 @@ class I18nManager:
         Returns:
             Nome do idioma
         """
-        language_names = {
+        # Tenta obter o nome do idioma do próprio arquivo de tradução
+        language_file = self.locales_dir / f"{language_code}.yaml"
+        
+        if language_file.exists():
+            try:
+                import yaml
+                with open(language_file, 'r', encoding='utf-8') as f:
+                    data = yaml.safe_load(f)
+                    
+                # Tenta obter o nome do idioma do arquivo
+                if isinstance(data, dict):
+                    # Procura por chaves comuns que podem conter o nome do idioma
+                    language_name = (
+                        data.get('language', {}).get('name') or
+                        data.get('app', {}).get('language_name') or
+                        data.get('meta', {}).get('language_name')
+                    )
+                    
+                    if language_name:
+                        return language_name
+                        
+            except Exception as e:
+                logger.debug(f"Erro ao ler nome do idioma de {language_file}: {e}")
+        
+        # Fallback para nomes conhecidos se não conseguir ler do arquivo
+        fallback_names = {
             'en_us': 'English (US)',
             'pt_br': 'Português (Brasil)',
             'es_es': 'Español (España)',
@@ -184,10 +209,11 @@ class I18nManager:
             'ko_kr': '한국어',
             'zh_cn': '中文(简体)',
             'zh_tw': '中文(繁體)',
-            'ru_ru': 'Русский'
+            'ru_ru': 'Русский',
+            'hi_in': 'हिन्दी (भारत)'
         }
         
-        return language_names.get(language_code, language_code.upper())
+        return fallback_names.get(language_code, language_code.upper())
     
     def _get_nested_value(self, data: Dict[str, Any], key_path: str) -> Optional[Any]:
         """Obtém valor aninhado usando notação de ponto.
