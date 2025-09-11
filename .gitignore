@@ -196,3 +196,10 @@ CLIDOWNROM-*.zip
 *.dmg
 *.pkg
 *.msi
+
+# Temp files
+/temp/
+*.tmp
+shell_history.txt
+/logs/
+*.log
