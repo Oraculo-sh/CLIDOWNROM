@@ -107,9 +107,14 @@ def sanitize_filename(filename: str) -> str:
     Returns:
         Nome sanitizado
     """
+    import html
+    
+    # Decodifica entidades HTML
+    sanitized = html.unescape(filename)
+    
     # Remove caracteres inválidos para nomes de arquivo
     invalid_chars = r'[<>:"/\\|?*]'
-    sanitized = re.sub(invalid_chars, '_', filename)
+    sanitized = re.sub(invalid_chars, '_', sanitized)
     
     # Remove espaços extras e pontos no final
     sanitized = sanitized.strip(' .')

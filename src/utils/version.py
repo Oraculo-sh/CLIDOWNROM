@@ -10,7 +10,7 @@ License: GPL-3.0
 
 __version__ = "1.0.0"
 __author__ = "Leonne Martins"
-__email__ = "leonne@example.com"
+__email__ = "leonne.martins@outlook.com"
 __license__ = "GPL-3.0"
 __copyright__ = "Copyright (c) 2024 Leonne Martins"
 __url__ = "https://github.com/Oraculo-sh/CLIDOWNROM"
