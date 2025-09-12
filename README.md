@@ -3,7 +3,7 @@
 [![Status](https://img.shields.io/badge/status-beta-yellow.svg)](#)
 [![Version](https://img.shields.io/badge/version-1.0.0b-blue.svg)](#)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/downloads/)
 [![Platforms](https://img.shields.io/badge/plataforma-Windows%20%7C%20Linux-lightgrey.svg)](#)
 [![Interfaces](https://img.shields.io/badge/interfaces-CLI%20%7C%20Shell%20%7C%20TUI%20%7C%20GUI-8A2BE2.svg)](#)
 [![Languages](https://img.shields.io/badge/i18n-EN%20%7C%20PT-brightgreen.svg)](#)
@@ -158,15 +158,15 @@ CLIDOWNLOAD/
 │   │   ├── *.rom
 │   │   └── boxart/
 │   │       └── *.jpg
-├── TEMP/
+├── temp/
 │   ├── downloads/
+│   ├── cache/
 │   └── teste/
 ├── logs/
 │   ├── lastlog.txt
 │   └── session-*.log
-├── cache/
 └── config/
-    └── user_config.yml
+    └── config.yml
 ```
 
 ## 🌍 Currently Supported Languages
@@ -175,7 +175,8 @@ CLIDOWNLOAD/
 - Portuguese (pt_br) - Brazilian
 - Russian (ru) - Русский
 
-To add new languages, create a JSON file in `src/locales/` using `en_us.yml` as a reference.
+To add new languages, create a YAML file in `src/locales/` using `en_us.yml` as a reference.
+The system automatically detects and loads new language files when they are placed in the `src/locales/` directory, as long as the filename follows the standard locale code format (e.g., `fr_fr.yml`, `es_es.yml`, `de_de.yml`).
 
 ## 🔧 Development
 

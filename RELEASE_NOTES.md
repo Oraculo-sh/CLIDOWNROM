@@ -50,7 +50,7 @@ clidownrom.exe --interface shell
 
 - **Mínimo**: Nenhuma dependência adicional (executável standalone)
 - **Opcional**: textual (para TUI), PyQt6 (para GUI), pygame (para joystick)
-- **Python**: 3.8+ (apenas para execução do código fonte)
+- **Python**: 3.12+ (apenas para execução do código fonte)
 
 ### 🐛 Problemas Conhecidos
 
