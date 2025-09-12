@@ -59,6 +59,11 @@ class ConfigManager:
             'logs': 'logs'
             # 'cache' removido: agora segue automaticamente o diretório TEMP
         },
+        # --- NEW: search defaults ---
+        'search': {
+            'max_results': 100,
+            'results_per_page': 10
+        },
         'performance': {
             'test_mirrors': True,
             'mirror_test_timeout': 10,
@@ -213,7 +218,10 @@ class ConfigManager:
             ('download', 'max_concurrent', 1, 20),
             ('download', 'chunk_size', 1024, 1048576),
             ('cache', 'ttl_hours', 1, 168),  # 1 hora a 1 semana
-            ('cache', 'max_size_mb', 10, 1000)
+            ('cache', 'max_size_mb', 10, 1000),
+            # --- NEW: search validation ---
+            ('search', 'max_results', 1, 1000),
+            ('search', 'results_per_page', 1, 200),
         ]
         
         for section, key, min_val, max_val in numeric_validations:

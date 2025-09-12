@@ -53,10 +53,6 @@ interface:
   # Visual theme name for TUI/GUI (default: default)
   theme: default
 
-# Example of an invalid/custom section (kept for testing). Safe to remove.
-invalid:
-  key: invalid_value
-
 logging:
   # Enable logging to the console (default: false)
   console_enabled: false

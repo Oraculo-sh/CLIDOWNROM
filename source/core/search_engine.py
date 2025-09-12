@@ -52,18 +52,29 @@ class ROMScore:
     def __post_init__(self):
         """Calcula pontuação total."""
         self.total_score = (
-            self.title_score * 0.4 +
-            self.platform_score * 0.15 +
-            self.region_score * 0.15 +
-            self.year_score * 0.1 +
-            self.quality_score * 0.1 +
-            self.availability_score * 0.1
+            self.title_score * 0.55 +
+            self.platform_score * 0.10 +
+            self.region_score * 0.10 +
+            self.year_score * 0.05 +
+            self.quality_score * 0.10 +
+            self.availability_score * 0.10
         )
 
 
 class SearchEngine:
     """Motor de busca com ranking de relevância."""
     
+    # Resultado paginado de busca
+    @dataclass
+    class PagedSearchResult:
+        items: List["ROMScore"]
+        total: int
+        page: int
+        per_page: int
+        page_count: int
+        has_prev: bool
+        has_next: bool
+
     def __init__(self, api_client: CrocDBClient):
         """Inicializa o motor de busca.
         
@@ -112,48 +123,61 @@ class SearchEngine:
         
         return self.regions_cache
     
-    def _calculate_title_score(self, query: str, rom_entry: ROMEntry) -> float:
-        """Calcula pontuação baseada na similaridade do título.
+    def _calculate_title_score(self, query: str, rom_entry: ROMEntry,
+                               platform_codes: Optional[set] = None,
+                               region_codes: Optional[set] = None) -> float:
+        """Calcula pontuação baseada no título usando cobertura de tokens, similaridade e bônus de frase.
         
-        Args:
-            query: Consulta de busca
-            rom_entry: Entrada da ROM
-            
-        Returns:
-            Pontuação do título (0.0 - 1.0)
+        - Penaliza tokens ausentes exceto quando o token é plataforma ou região.
+        - Bônus para correspondência de frase (query como substring do título).
+        - Mantém penalidade leve para excesso de caracteres especiais.
         """
         if not query or not rom_entry.title:
             return 0.0
-        
-        # Pontuação base por similaridade
-        base_score = calculate_similarity(query, rom_entry.title)
-        
-        # Bônus para correspondência exata
-        if normalize_text(query) == normalize_text(rom_entry.title):
-            base_score = 1.0
-        
-        # Bônus para correspondência de palavras-chave
-        query_words = normalize_text(query).split()
-        title_words = normalize_text(rom_entry.title).split()
-        
-        keyword_matches = 0
-        for query_word in query_words:
-            if len(query_word) > 2:  # Ignora palavras muito curtas
-                for title_word in title_words:
-                    if query_word in title_word or title_word in query_word:
-                        keyword_matches += 1
-                        break
-        
-        if query_words:
-            keyword_bonus = (keyword_matches / len(query_words)) * 0.3
-            base_score = min(1.0, base_score + keyword_bonus)
-        
-        # Penalidade para títulos com muitos caracteres especiais (possíveis hacks)
+
+        q_norm = normalize_text(query)
+        title_norm = normalize_text(rom_entry.title)
+
+        # Tokens da consulta e tokens isentos (plataforma/região)
+        q_tokens = [tok for tok in q_norm.split() if tok]
+        platform_codes = platform_codes or set()
+        region_codes = region_codes or set()
+        exempt_tokens = {t for t in q_tokens if (t in platform_codes or t in region_codes)}
+        content_tokens = [t for t in q_tokens if t not in exempt_tokens]
+
+        # Similaridade geral como componente auxiliar
+        sim = calculate_similarity(query, rom_entry.title)
+
+        # Exato (após normalização) -> score máximo
+        if q_norm == title_norm:
+            return 1.0
+
+        # Cobertura de tokens: proporção de tokens da consulta presentes no título
+        matches = 0
+        for t in content_tokens:
+            if t in title_norm:
+                matches += 1
+        coverage = 1.0 if not content_tokens else (matches / max(1, len(content_tokens)))
+
+        # Bônus por frase (consulta como substring contínua)
+        phrase_bonus = 0.0
+        if len(content_tokens) >= 1 and q_norm in title_norm:
+            phrase_bonus = 0.1
+
+        # Penalidade por tokens ausentes (não se aplica a tokens de plataforma/região)
+        missing = 0 if not content_tokens else (len(content_tokens) - matches)
+        missing_penalty = min(0.4, missing * 0.08)  # limita a penalidade total
+
+        # Combinação: prioriza cobertura, depois similaridade
+        base = (0.6 * coverage) + (0.4 * sim)
+        score = base + phrase_bonus - missing_penalty
+
+        # Penalidade leve para muitos caracteres especiais (indicadores de dumps/hacks)
         special_chars = len(re.findall(r'[\[\](){}]', rom_entry.title))
         if special_chars > 3:
-            base_score *= 0.8
-        
-        return base_score
+            score *= 0.85
+
+        return max(0.0, min(1.0, score))
     
     def _calculate_platform_score(self, 
                                  preferred_platforms: Optional[List[str]], 
@@ -330,18 +354,22 @@ class SearchEngine:
     def _score_rom(self, 
                    query: str, 
                    rom_entry: ROMEntry, 
-                   search_filter: SearchFilter) -> ROMScore:
+                   search_filter: SearchFilter,
+                   platform_codes: Optional[set] = None,
+                   region_codes: Optional[set] = None) -> ROMScore:
         """Calcula pontuação total de uma ROM.
         
         Args:
             query: Consulta de busca
             rom_entry: Entrada da ROM
             search_filter: Filtros de busca
+            platform_codes: Conjunto de códigos de plataforma normalizados
+            region_codes: Conjunto de códigos de região normalizados
             
         Returns:
             Pontuação da ROM
         """
-        title_score = self._calculate_title_score(query, rom_entry)
+        title_score = self._calculate_title_score(query, rom_entry, platform_codes, region_codes)
         platform_score = self._calculate_platform_score(search_filter.platforms, rom_entry)
         region_score = self._calculate_region_score(search_filter.regions, rom_entry)
         
@@ -475,33 +503,120 @@ class SearchEngine:
             
             # Aplica filtros adicionais
             filtered_entries = self._apply_filters(search_result.results, search_filter)
+
+            # Carrega códigos de plataforma/região para tratamento de tokens isentos
+            try:
+                platforms_list = await self.get_platforms()
+                regions_list = await self.get_regions()
+            except Exception:
+                platforms_list, regions_list = [], []
+            platform_codes_set = {normalize_text(p) for p in (platforms_list or [])}
+            region_codes_set = {normalize_text(r) for r in (regions_list or [])}
             
-            logger.info(f"Após filtros: {len(filtered_entries)} resultados")
+            # Filtro por palavras-chave (ignorando tokens de plataforma/região)
+            all_tokens = [k for k in normalize_text(query).split() if k]
+            content_tokens = [k for k in all_tokens if k not in platform_codes_set and k not in region_codes_set]
+            if content_tokens:
+                tmp = []
+                for rom_entry in filtered_entries:
+                    title_norm = normalize_text(rom_entry.title)
+                    matches = sum(1 for k in content_tokens if k in title_norm)
+                    # Permite faltar até 1 palavra quando há 2+ termos de conteúdo
+                    min_required = max(1, len(content_tokens) - 1)
+                    if matches >= min_required:
+                        tmp.append(rom_entry)
+                filtered_entries = tmp
+                
+                # Fallback: se nada sobrou, relaxa para OR (qualquer termo de conteúdo)
+                if not filtered_entries:
+                    tmp = []
+                    for rom_entry in search_result.results:
+                        title_norm = normalize_text(rom_entry.title)
+                        if any(k in title_norm for k in content_tokens):
+                            tmp.append(rom_entry)
+                    filtered_entries = self._apply_filters(tmp, search_filter)
             
             # Calcula pontuações
-            scored_roms = []
+            scored_roms: List[ROMScore] = []
             for rom_entry in filtered_entries:
-                score = self._score_rom(query, rom_entry, search_filter)
-                scored_roms.append(score)
+                scored_roms.append(self._score_rom(query, rom_entry, search_filter, platform_codes_set, region_codes_set))
             
-            # Ordena por pontuação (maior primeiro)
+            # Ordena e aplica limite total
             scored_roms.sort(key=lambda x: x.total_score, reverse=True)
-            
-            # Limita resultados
-            final_results = scored_roms[:limit]
-            
-            logger.info(f"Retornando {len(final_results)} resultados ordenados por relevância")
-            
-            # Log das melhores pontuações para debug
-            for i, scored_rom in enumerate(final_results[:5]):
-                logger.debug(f"#{i+1}: {scored_rom.rom_entry.title} - Score: {scored_rom.total_score:.3f}")
-            
-            return final_results
-            
+            return scored_roms[:limit]
         except Exception as e:
             logger.error(f"Erro na busca: {e}")
             return []
-    
+
+    async def search_paged(self,
+                           query: str,
+                           search_filter: Optional[SearchFilter] = None,
+                           page: int = 1,
+                           per_page: int = 10,
+                           max_results: int = 100) -> "SearchEngine.PagedSearchResult":
+        """Busca paginada com ranking de relevância.
+        
+        Args:
+            query: Consulta de busca
+            search_filter: Filtros opcionais
+            page: Página atual (1-indexada)
+            per_page: Itens por página
+            max_results: Limite total de resultados classificados
+        """
+        if search_filter is None:
+            search_filter = SearchFilter()
+        try:
+            scored_roms = await self.search(query, search_filter, limit=max_results)
+            total = len(scored_roms)
+
+            # Calcula fatia da página
+            start = (page - 1) * per_page
+            end = start + per_page
+            items = scored_roms[start:end] if start < total else []
+
+            # Metadados de paginação
+            page_count = (total + per_page - 1) // per_page if total > 0 else 0
+            has_prev = page > 1 and page <= max(page_count, 1)
+            has_next = page < page_count
+
+            logger.info(f"Página {page}/{max(page_count,1)}: exibindo {len(items)} de {total} resultados")
+            return SearchEngine.PagedSearchResult(
+                items=items,
+                total=total,
+                page=page,
+                per_page=per_page,
+                page_count=page_count,
+                has_prev=has_prev,
+                has_next=has_next,
+            )
+        except Exception as e:
+            logger.error(f"Erro na busca paginada: {e}")
+            return SearchEngine.PagedSearchResult(
+                items=[], total=0, page=page, per_page=per_page,
+                page_count=0, has_prev=False, has_next=False
+            )
+
+    def search_paged_sync(self,
+                          query: str,
+                          search_filter: Optional[SearchFilter] = None,
+                          page: int = 1,
+                          per_page: int = 10,
+                          max_results: int = 100) -> "SearchEngine.PagedSearchResult":
+        """Versão síncrona de busca paginada."""
+        import asyncio
+        import concurrent.futures
+        try:
+            asyncio.get_running_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, self.search_paged(query, search_filter, page, per_page, max_results))
+                return future.result()
+        except RuntimeError:
+            return asyncio.run(self.search_paged(query, search_filter, page, per_page, max_results))
+        except Exception as e:
+            logger.error(f"Erro na busca paginada síncrona: {e}")
+            return SearchEngine.PagedSearchResult(items=[], total=0, page=page, per_page=per_page,
+                                                  page_count=0, has_prev=False, has_next=False)
+
     async def search_random(self, 
                            search_filter: Optional[SearchFilter] = None,
                            count: int = 10) -> List[ROMEntry]:

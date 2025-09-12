@@ -11,8 +11,9 @@ License: GPL-3.0
 
 import time
 import requests
+import os
 from typing import Dict, List, Optional, Any, Tuple
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse, unquote
 from loguru import logger
 from dataclasses import dataclass
 
@@ -101,6 +102,61 @@ class ROMEntry:
             except (TypeError, ValueError):
                 return 0
         return 0
+
+    # ------- Novas propriedades derivadas para apresentação -------
+    @property
+    def hosts_list(self) -> List[str]:
+        """Lista de hosts únicos disponíveis para a ROM (apenas links de jogo)."""
+        if not self.links:
+            return []
+        seen = set()
+        ordered_hosts: List[str] = []
+        for link in self.links:
+            if link.get('type') != 'Game':
+                continue
+            host = (link.get('host') or '').strip()
+            if not host:
+                # tenta extrair do URL
+                url = link.get('url') or ''
+                try:
+                    netloc = urlparse(url).netloc
+                    host = netloc.split(':')[0]
+                except Exception:
+                    host = ''
+            if host and host.lower() not in seen:
+                seen.add(host.lower())
+                ordered_hosts.append(host)
+        return ordered_hosts
+
+    @property
+    def hosts(self) -> str:
+        """Hosts em formato de texto para exibição (separados por vírgula)."""
+        return ', '.join(self.hosts_list)
+
+    @property
+    def file_format(self) -> str:
+        """Formato do arquivo (ex.: ZIP, 7Z, ISO), com fallback por filename/URL."""
+        best_link = self.get_best_download_link()
+        if not best_link:
+            return ''
+        fmt = (best_link.get('format') or '').strip()
+        if fmt:
+            return fmt.upper()
+        # tenta inferir por filename ou url
+        filename = (best_link.get('filename') or '').strip()
+        if not filename:
+            url = best_link.get('url') or ''
+            try:
+                path = urlparse(url).path
+                filename = os.path.basename(unquote(path))
+            except Exception:
+                filename = ''
+        if filename:
+            _, ext = os.path.splitext(filename)
+            if ext:
+                ext = ext.lstrip('.').upper()
+                return ext
+        return ''
 
 
 @dataclass
@@ -240,7 +296,8 @@ class CrocDBClient:
                       platforms: List[str] = None,
                       regions: List[str] = None,
                       max_results: int = 50,
-                      page: int = 1) -> Optional[SearchResult]:
+                      page: int = 1,
+                      rom_id: Optional[str] = None) -> Optional[SearchResult]:
         """Busca entradas de ROM na API.
         
         Args:
@@ -249,6 +306,7 @@ class CrocDBClient:
             regions: Lista de regiões para filtrar
             max_results: Número máximo de resultados
             page: Página dos resultados
+            rom_id: Filtro opcional por ROM ID
             
         Returns:
             Objeto SearchResult ou None em caso de erro.
@@ -265,7 +323,10 @@ class CrocDBClient:
         if regions:
             data['regions'] = regions
         
-        logger.info(f"Buscando ROMs: '{search_key}'")
+        if rom_id:
+            data['rom_id'] = rom_id
+        
+        logger.info(f"Buscando ROMs: '{search_key}'{f' | rom_id={rom_id}' if rom_id else ''}")
         logger.debug(f"Parâmetros de busca: {data}")
         
         success, response_data = self._make_request('POST', '/search', data=data)

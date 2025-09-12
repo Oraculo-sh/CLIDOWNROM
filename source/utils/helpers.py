@@ -13,11 +13,16 @@ import os
 import time
 import hashlib
 import platform
+import difflib
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 from urllib.parse import urlparse
 from unidecode import unidecode
-from Levenshtein import distance as levenshtein_distance
+# Tenta importar Levenshtein; se indisponível, usa fallback puro-Python via difflib
+try:
+    from Levenshtein import distance as levenshtein_distance  # type: ignore
+except Exception:  # ImportError, OSError (bindings nativos), etc.
+    levenshtein_distance = None  # type: ignore
 from loguru import logger
 
 
@@ -41,6 +46,7 @@ def format_file_size(size_bytes: int) -> str:
         i += 1
     
     return f"{size_bytes:.1f} {size_names[i]}"
+
 
 
 def format_duration(seconds: float) -> str:
@@ -171,15 +177,19 @@ def calculate_similarity(text1: str, text2: str) -> float:
     if norm1 == norm2:
         return 1.0
     
-    # Calcula distância de Levenshtein
     max_len = max(len(norm1), len(norm2))
     if max_len == 0:
         return 1.0
     
-    distance = levenshtein_distance(norm1, norm2)
-    similarity = 1.0 - (distance / max_len)
-    
-    return max(0.0, similarity)
+    # Usa Levenshtein quando disponível; caso contrário, fallback para difflib
+    if levenshtein_distance is not None:  # type: ignore
+        distance = levenshtein_distance(norm1, norm2)  # type: ignore
+        similarity = 1.0 - (distance / max_len)
+        return max(0.0, similarity)
+    else:
+        # Fallback puro-Python (sem dependências nativas)
+        ratio = difflib.SequenceMatcher(None, norm1, norm2).ratio()
+        return max(0.0, min(1.0, float(ratio)))
 
 
 def extract_year_from_title(title: str) -> Optional[int]:

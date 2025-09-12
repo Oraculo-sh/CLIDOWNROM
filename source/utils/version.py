@@ -22,7 +22,7 @@ __build_number__ = "1"
 
 # API compatibility
 __api_version__ = "1.0"
-__min_python_version__ = "3.8"
+__min_python_version__ = "3.12"
 
 
 def get_version_info():

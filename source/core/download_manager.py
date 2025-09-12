@@ -476,100 +476,79 @@ class DownloadManager:
             logger.error(f"Erro ao mover arquivo: {e}")
             return None
     
-    async def download_rom(self, rom_entry: ROMEntry, download_boxart: bool = True) -> DownloadResult:
+    async def download_rom(self, rom_entry: ROMEntry, download_boxart: bool = True, progress_callback: Optional[Callable] = None) -> DownloadResult:
         """Baixa uma ROM completa (arquivo + capa opcional).
         
         Args:
             rom_entry: Entrada da ROM
             download_boxart: Se deve baixar a capa
+            progress_callback: Callback temporário para progresso desta chamada
             
         Returns:
             Resultado do download
         """
         logger.info(f"Iniciando download da ROM: {rom_entry.title}")
-        
-        # Encontra o melhor link de download
-        best_link = rom_entry.get_best_download_link(self.preferred_hosts)
-        
-        if not best_link:
-            logger.error(f"Nenhum link de download encontrado para: {rom_entry.title}")
-            return DownloadResult(
-                success=False,
-                filename=rom_entry.title,
-                final_path=None,
-                size=0,
-                duration=0,
-                error="Nenhum link de download disponível",
-                attempts=0
-            )
-        
-        url = best_link['url']
-        filename = best_link['filename']
-        expected_size = best_link.get('size')
-        
-        # Baixa o arquivo principal
-        result = await self.download_file(url, filename, expected_size)
-        
-        if result.success and result.final_path:
-            # Move para destino final
-            final_path = await self.move_to_final_destination(
-                Path(result.final_path), 
-                rom_entry.platform, 
-                filename
-            )
-            
-            if final_path:
-                result.final_path = final_path
-                
-                # Baixa capa se solicitado
-                if download_boxart and rom_entry.boxart_url:
-                    await self._download_boxart(rom_entry)
-            
-        return result
-    
-    async def _download_boxart(self, rom_entry: ROMEntry):
-        """Baixa a capa de uma ROM.
-        
-        Args:
-            rom_entry: Entrada da ROM
-        """
+
+        # Aplicar callback temporário se fornecido
+        prev_cb = self.progress_callback
+        if progress_callback is not None:
+            try:
+                self.set_progress_callback(progress_callback)
+            except Exception:
+                self.progress_callback = progress_callback
         try:
-            if not rom_entry.boxart_url:
-                return
+            # Encontra o melhor link de download
+            best_link = rom_entry.get_best_download_link(self.preferred_hosts)
             
-            # Extrai nome do arquivo da URL
-            parsed_url = urlparse(rom_entry.boxart_url)
-            boxart_filename = Path(parsed_url.path).name
+            if not best_link:
+                logger.error(f"Nenhum link de download encontrado para: {rom_entry.title}")
+                return DownloadResult(
+                    success=False,
+                    filename=rom_entry.title,
+                    final_path=None,
+                    size=0,
+                    duration=0,
+                    error="Nenhum link de download disponível",
+                    attempts=0
+                )
             
-            if not boxart_filename:
-                boxart_filename = f"{rom_entry.slug}_boxart.png"
+            url = best_link['url']
+            filename = best_link['filename']
+            expected_size = best_link.get('size')
             
-            logger.info(f"Baixando capa: {boxart_filename}")
-            
-            # Baixa a capa
-            result = await self.download_file(rom_entry.boxart_url, boxart_filename)
+            # Baixa o arquivo principal
+            result = await self.download_file(url, filename, expected_size)
             
             if result.success and result.final_path:
-                # Move para diretório de capas
-                boxart_path = self.dir_manager.get_boxart_path(rom_entry.platform, boxart_filename)
-                boxart_path.parent.mkdir(parents=True, exist_ok=True)
+                # Move para destino final
+                final_path = await self.move_to_final_destination(
+                    Path(result.final_path), 
+                    rom_entry.platform, 
+                    filename
+                )
                 
-                shutil.move(result.final_path, str(boxart_path))
-                logger.info(f"Capa salva em: {boxart_path}")
-            else:
-                logger.warning(f"Falha no download da capa: {rom_entry.title}")
-                
-        except Exception as e:
-            logger.warning(f"Erro ao baixar capa para {rom_entry.title}: {e}")
-    
+                if final_path:
+                    result.final_path = final_path
+                    
+                    # Baixa capa se solicitado
+                    if download_boxart and rom_entry.boxart_url:
+                        await self._download_boxart(rom_entry)
+            
+            return result
+        finally:
+            # Restaurar callback anterior
+            self.progress_callback = prev_cb
+
     async def download_multiple_roms(self, 
                                     rom_entries: List[ROMEntry], 
-                                    download_boxart: bool = True) -> List[DownloadResult]:
+                                    download_boxart: bool = True,
+                                    progress_callback: Optional[Callable] = None) -> List[DownloadResult]:
         """Baixa múltiplas ROMs simultaneamente.
         
         Args:
             rom_entries: Lista de entradas de ROM
             download_boxart: Se deve baixar capas
+            progress_callback: Callback de progresso para todas as ROMs desta chamada
             
         Returns:
             Lista de resultados de download
@@ -578,7 +557,7 @@ class DownloadManager:
         
         tasks = []
         for rom_entry in rom_entries:
-            task = self.download_rom(rom_entry, download_boxart)
+            task = self.download_rom(rom_entry, download_boxart, progress_callback)
             tasks.append(task)
         
         results = await asyncio.gather(*tasks, return_exceptions=True)

@@ -92,11 +92,8 @@ except ImportError:
     QLinearGradient = DummyQtClass
     def pyqtSignal(*args): return lambda x: x
 
-try:
-    import pygame
-except ImportError:
-    # pygame not available - joystick support will be disabled
-    pygame = None
+# Lazy pygame import: only load when GUI initializes gamepad handling
+pygame = None
 
 from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, SearchFilter
 from ..api import CrocDBClient, ROMEntry
@@ -120,6 +117,17 @@ class GamepadManager(QObject):
         self.joystick = None
         self.running = False
         self.thread = None
+        
+        # Import pygame lazily and suppress support prompt banner
+        global pygame
+        if pygame is None:
+            try:
+                import os
+                os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
+                import importlib
+                pygame = importlib.import_module('pygame')
+            except Exception:
+                pygame = None
         
         if pygame:
             pygame.init()
@@ -1037,8 +1045,16 @@ class GUIInterface:
         
         # Initialize download manager
         self.download_manager = DownloadManager(
-            self.dirs
+            self.dirs,
+            max_concurrent=self.config.get('download', {}).get('max_concurrent', 4),
+            chunk_size=self.config.get('download', {}).get('chunk_size', 8192),
+            timeout=self.config.get('download', {}).get('timeout', 300),
+            max_retries=self.config.get('api', {}).get('max_retries', 3),
+            verify_downloads=self.config.get('download', {}).get('verify_downloads', True),
         )
+        pref_hosts = self.config.get('download', {}).get('preferred_hosts', []) or []
+        if pref_hosts:
+            self.download_manager.set_preferred_hosts(pref_hosts)
         
         # Initialize gamepad manager
         self.gamepad = GamepadManager()

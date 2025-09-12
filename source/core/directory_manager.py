@@ -57,8 +57,7 @@ class DirectoryManager:
                 else:
                     logger.debug(f"Diretório já existe: {path}")
             
-            # Cria arquivo .gitkeep nos diretórios vazios
-            self._create_gitkeep_files()
+            # Removido: criação automática de arquivos .gitkeep em diretórios vazios
             
             return True
             
@@ -66,15 +65,7 @@ class DirectoryManager:
             logger.error(f"Erro ao criar diretórios: {e}")
             return False
     
-    def _create_gitkeep_files(self):
-        """Cria arquivos .gitkeep em diretórios que devem ser versionados vazios."""
-        gitkeep_dirs = ['temp', 'temp_downloads', 'temp_test', 'logs', 'cache']
-        
-        for dir_name in gitkeep_dirs:
-            if dir_name in self.paths:
-                gitkeep_path = self.paths[dir_name] / '.gitkeep'
-                if not gitkeep_path.exists():
-                    gitkeep_path.touch()
+    # Removido: método _create_gitkeep_files que gerava arquivos .gitkeep
     
     def ensure_platform_directory(self, platform: str) -> Path:
         """Garante que o diretório da plataforma existe.
@@ -184,8 +175,7 @@ class DirectoryManager:
                 self.paths['temp_downloads'].mkdir(exist_ok=True)
                 self.paths['temp_test'].mkdir(exist_ok=True)
                 
-                # Recria os arquivos .gitkeep
-                self._create_gitkeep_files()
+                # Removido: recriação de arquivos .gitkeep
                 
                 logger.info("Diretório temporário limpo com sucesso")
                 return True

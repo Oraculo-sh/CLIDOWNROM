@@ -15,6 +15,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 from loguru import logger
+from ..utils import format_file_size
 
 
 class LogManager:
@@ -154,7 +155,7 @@ class LogManager:
             url: URL do download
             size: Tamanho do arquivo em bytes (opcional)
         """
-        size_str = f" ({self._format_size(size)})" if size else ""
+        size_str = f" ({format_file_size(size)})" if size else ""
         logger.info(f"Iniciando download: {rom_name}{size_str}")
         logger.debug(f"URL: {url}")
     
@@ -295,23 +296,21 @@ class LogManager:
         """
         logger.critical(message)
 
-    def _format_size(self, size_bytes: int) -> str:
-        """Formata o tamanho em bytes para uma string legível.
-        
-        Args:
-            size_bytes: Tamanho em bytes
-            
-        Returns:
-            String formatada com o tamanho.
-        """
-        if size_bytes is None:
-            return "tamanho desconhecido"
-        
-        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-            if size_bytes < 1024.0:
-                return f"{size_bytes:.1f} {unit}"
-            size_bytes /= 1024.0
-        return f"{size_bytes:.1f} PB"
+# Removed duplicate size formatting in favor of utils.format_file_size
+# def _format_size(self, size_bytes: int) -> str:
+#     """Formata o tamanho em bytes para uma string legível.
+#     Args:
+#         size_bytes: Tamanho em bytes
+#     Returns:
+#         String formatada com o tamanho.
+#     """
+#     if size_bytes is None:
+#         return "tamanho desconhecido"
+#     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+#         if size_bytes < 1024.0:
+#             return f"{size_bytes:.1f} {unit}"
+#         size_bytes /= 1024.0
+#     return f"{size_bytes:.1f} PB"
     
     def get_log_files(self) -> list:
         """Retorna lista de arquivos de log existentes.

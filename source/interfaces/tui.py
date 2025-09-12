@@ -99,12 +99,34 @@ class SearchScreen(Screen):
     BINDINGS = [
         Binding("escape", "back", "Back"),
         Binding("f1", "help", "Help"),
+        Binding("n", "next_page", "Next"),
+        Binding("p", "prev_page", "Prev"),
+        Binding("space", "toggle_select", "Toggle Select"),
+        Binding("enter", "download_selected", "Download Selected"),
     ]
     
     def __init__(self, tui_app):
         super().__init__()
         self.tui_app = tui_app
         self.search_results = []
+        # Pagination and selection state
+        self.page = 1
+        try:
+            self.per_page = int(self.tui_app.config.get('search.results_per_page', 10))
+        except Exception:
+            self.per_page = 10
+        try:
+            self.max_results = int(self.tui_app.config.get('search.max_results', 100))
+        except Exception:
+            self.max_results = 100
+        self.total = 0
+        self.page_count = 0
+        self.has_prev = False
+        self.has_next = False
+        self.query_str = ""
+        self.current_filter = SearchFilter()
+        self.selected_ids = set()
+        self.results_cache = {}
     
     def compose(self) -> ComposeResult:
         """Create the search screen layout."""
@@ -127,7 +149,12 @@ class SearchScreen(Screen):
                 yield Button("Random", id="random-btn")
             
             yield Static("Search Results:", classes="section-title")
+            yield Static("", id="results-header")
             yield DataTable(id="results-table")
+            
+            with Horizontal():
+                yield Button("Prev", id="prev-btn")
+                yield Button("Next", id="next-btn")
             
             with Horizontal():
                 yield Button("Download Selected", id="download-btn", variant="success")
@@ -139,10 +166,18 @@ class SearchScreen(Screen):
     def on_mount(self) -> None:
         """Initialize the search screen."""
         table = self.query_one("#results-table", DataTable)
-        table.add_columns("#", "Title", "Platform", "Region", "Year", "Size")
+        # Add selection column and metadata columns
+        table.add_columns("Sel", "#", "Title", "Platform", "Region", "Year", "Size")
         
         # Focus on search input
         self.query_one("#search-input", Input).focus()
+        
+        # Disable nav initially
+        try:
+            self.query_one("#prev-btn", Button).disabled = True
+            self.query_one("#next-btn", Button).disabled = True
+        except Exception:
+            pass
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
@@ -158,6 +193,10 @@ class SearchScreen(Screen):
             self.download_all()
         elif event.button.id == "info-btn":
             self.show_rom_info()
+        elif event.button.id == "prev-btn":
+            self.action_prev_page()
+        elif event.button.id == "next-btn":
+            self.action_next_page()
     
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Handle input submission (Enter key)."""
@@ -165,7 +204,7 @@ class SearchScreen(Screen):
             self.perform_search()
     
     def perform_search(self) -> None:
-        """Perform ROM search."""
+        """Perform ROM search (paginated)."""
         query = self.query_one("#search-input", Input).value.strip()
         if not query:
             return
@@ -179,28 +218,70 @@ class SearchScreen(Screen):
             regions=[region] if region else []
         )
         
+        # Reset state
+        self.query_str = query
+        self.current_filter = search_filter
+        self.page = 1
+        self.total = 0
+        self.page_count = 0
+        self.has_prev = False
+        self.has_next = False
+        self.search_results = []
+        self.results_cache = {}
+        # Keep current selections only if same query? For safety, reset.
+        self.selected_ids = set()
+        
         # Show loading message
         table = self.query_one("#results-table", DataTable)
         table.clear()
-        table.add_row("Loading...", "", "", "", "", "")
+        table.add_row("…", "Loading...", "", "", "", "", "")
         
         # Perform search in background
-        asyncio.create_task(self._search_async(query, search_filter))
+        asyncio.create_task(self._search_page_async(self.page))
     
-    async def _search_async(self, query: str, search_filter: SearchFilter) -> None:
-        """Perform asynchronous search."""
+    async def _search_page_async(self, page: int) -> None:
+        """Perform asynchronous paginated search for specific page."""
         try:
-            results = await self.tui_app.search_engine.search(
-                query, search_filter, 50
+            paged = await self.tui_app.search_engine.search_paged(
+                query=self.query_str,
+                search_filter=self.current_filter,
+                page=page,
+                per_page=self.per_page,
+                max_results=self.max_results,
             )
+            # Update state
+            self.page = paged.page
+            self.per_page = paged.per_page
+            self.total = paged.total
+            self.page_count = paged.page_count
+            self.has_prev = paged.has_prev
+            self.has_next = paged.has_next
             
-            self.search_results = [rom.rom_entry for rom in results]
+            # Extract entries and update cache
+            self.search_results = []
+            for s in paged.items:
+                rom = getattr(s, 'rom_entry', s)
+                if rom and getattr(rom, 'slug', None):
+                    self.results_cache[rom.slug] = rom
+                self.search_results.append(rom)
+            
+            # Update UI
             self.update_results_table()
             
+            # Update header and nav
+            start = (self.page - 1) * self.per_page + (1 if self.total > 0 else 0)
+            end = min(self.total, self.page * self.per_page)
+            header = self.query_one("#results-header", Static)
+            header.update(f"Showing {start}-{end} of {self.total} (Page {self.page}/{max(self.page_count, 1)})")
+            
+            prev_btn = self.query_one("#prev-btn", Button)
+            next_btn = self.query_one("#next-btn", Button)
+            prev_btn.disabled = not self.has_prev
+            next_btn.disabled = not self.has_next
         except Exception as e:
             table = self.query_one("#results-table", DataTable)
             table.clear()
-            table.add_row(f"Error: {e}", "", "", "", "", "")
+            table.add_row("!", f"Error: {e}", "", "", "", "", "")
     
     def update_results_table(self) -> None:
         """Update the results table with search results."""
@@ -208,19 +289,23 @@ class SearchScreen(Screen):
         table.clear()
         
         if not self.search_results:
-            table.add_row("No results found", "", "", "", "", "")
+            table.add_row("", "No results found", "", "", "", "", "")
             return
         
+        start_index = (self.page - 1) * self.per_page
         for i, rom in enumerate(self.search_results, 1):
+            if not rom:
+                continue
             title = rom.title[:30] + "..." if len(rom.title) > 30 else rom.title
             platform = rom.platform[:12] + "..." if len(rom.platform) > 12 else rom.platform
             size_mb = rom.get_size_mb()
             size_str = f"{size_mb:.1f} MB" if size_mb > 0 else 'N/A'
-            year_str = str(rom.year) if rom.year else 'N/A'
-            region_str = rom.regions[0] if rom.regions else 'N/A'
-            
+            year_str = str(rom.year) if getattr(rom, 'year', None) else 'N/A'
+            region_str = rom.regions[0] if getattr(rom, 'regions', None) else 'N/A'
+            sel_mark = "[x]" if getattr(rom, 'slug', None) in self.selected_ids else "[ ]"
+            abs_index = start_index + i
             table.add_row(
-                str(i), title, platform, region_str, year_str, size_str
+                sel_mark, str(abs_index), title, platform, region_str, year_str, size_str
             )
     
     def clear_search(self) -> None:
@@ -232,6 +317,14 @@ class SearchScreen(Screen):
         table = self.query_one("#results-table", DataTable)
         table.clear()
         self.search_results = []
+        self.selected_ids = set()
+        self.results_cache = {}
+        try:
+            self.query_one("#results-header", Static).update("")
+            self.query_one("#prev-btn", Button).disabled = True
+            self.query_one("#next-btn", Button).disabled = True
+        except Exception:
+            pass
     
     def get_random_roms(self) -> None:
         """Get random ROMs."""
@@ -246,7 +339,7 @@ class SearchScreen(Screen):
         # Show loading message
         table = self.query_one("#results-table", DataTable)
         table.clear()
-        table.add_row("Loading random ROMs...", "", "", "", "", "")
+        table.add_row("…", "Loading random ROMs...", "", "", "", "", "")
         
         # Get random ROMs in background
         asyncio.create_task(self._random_async(search_filter))
@@ -260,33 +353,88 @@ class SearchScreen(Screen):
             )
             
             self.search_results = results
+            self.page = 1
+            self.total = len(results)
+            self.page_count = 1
+            self.has_prev = False
+            self.has_next = False
+            self.results_cache = {rom.slug: rom for rom in results if getattr(rom, 'slug', None)}
+            self.selected_ids = set()
             self.update_results_table()
-            
+            try:
+                self.query_one("#results-header", Static).update(f"Showing 1-{len(results)} of {len(results)} (Random)")
+                self.query_one("#prev-btn", Button).disabled = True
+                self.query_one("#next-btn", Button).disabled = True
+            except Exception:
+                pass
         except Exception as e:
             table = self.query_one("#results-table", DataTable)
             table.clear()
-            table.add_row(f"Error: {e}", "", "", "", "", "")
+            table.add_row("!", f"Error: {e}", "", "", "", "", "")
     
     def download_selected(self) -> None:
-        """Download selected ROM."""
+        """Download selected ROMs or current row if none selected."""
+        # If there are selected items, download them
+        if self.selected_ids:
+            roms = []
+            for slug in list(self.selected_ids):
+                rom = self.results_cache.get(slug)
+                if rom:
+                    roms.append(rom)
+            if roms:
+                self.tui_app.push_screen(DownloadScreen(self.tui_app, roms))
+                return
+        
+        # Fallback: download the one at cursor
         table = self.query_one("#results-table", DataTable)
         if table.cursor_row is None or not self.search_results:
             return
         
         try:
-            rom_index = table.cursor_row
-            if 0 <= rom_index < len(self.search_results):
-                rom = self.search_results[rom_index]
+            idx = table.cursor_row
+            if 0 <= idx < len(self.search_results):
+                rom = self.search_results[idx]
                 self.tui_app.push_screen(DownloadScreen(self.tui_app, [rom]))
         except (IndexError, ValueError):
             pass
     
     def download_all(self) -> None:
-        """Download all search results."""
-        if not self.search_results:
+        """Download all search results across all pages."""
+        if not self.query_str:
+            # No active query; fallback to current page
+            if not self.search_results:
+                return
+            self.tui_app.push_screen(DownloadScreen(self.tui_app, self.search_results))
             return
         
-        self.tui_app.push_screen(DownloadScreen(self.tui_app, self.search_results))
+        async def _gather_and_download():
+            try:
+                entries = []
+                page = 1
+                while True:
+                    paged = await self.tui_app.search_engine.search_paged(
+                        query=self.query_str,
+                        search_filter=self.current_filter,
+                        page=page,
+                        per_page=self.per_page,
+                        max_results=self.max_results,
+                    )
+                    entries.extend([getattr(s, 'rom_entry', s) for s in paged.items])
+                    if not paged.has_next:
+                        break
+                    page += 1
+                if entries:
+                    self.tui_app.push_screen(DownloadScreen(self.tui_app, entries))
+            except Exception as e:
+                table = self.query_one("#results-table", DataTable)
+                table.clear()
+                table.add_row("!", f"Error: {e}", "", "", "", "", "")
+        
+        # Optionally show loading indicator
+        table = self.query_one("#results-table", DataTable)
+        table.clear()
+        table.add_row("…", "Preparing downloads...", "", "", "", "", "")
+        asyncio.create_task(_gather_and_download())
     
     def show_rom_info(self) -> None:
         """Show detailed ROM information."""
@@ -300,6 +448,34 @@ class SearchScreen(Screen):
                 rom = self.search_results[rom_index]
                 self.tui_app.push_screen(ROMInfoScreen(self.tui_app, rom))
         except (IndexError, ValueError):
+            pass
+    
+    def action_next_page(self) -> None:
+        if self.has_next and self.query_str:
+            asyncio.create_task(self._search_page_async(self.page + 1))
+    
+    def action_prev_page(self) -> None:
+        if self.has_prev and self.query_str:
+            asyncio.create_task(self._search_page_async(max(1, self.page - 1)))
+    
+    def action_toggle_select(self) -> None:
+        """Toggle selection state of the current row."""
+        table = self.query_one("#results-table", DataTable)
+        if table.cursor_row is None or not self.search_results:
+            return
+        try:
+            idx = table.cursor_row
+            rom = self.search_results[idx]
+            slug = getattr(rom, 'slug', None)
+            if not slug:
+                return
+            if slug in self.selected_ids:
+                self.selected_ids.remove(slug)
+            else:
+                self.selected_ids.add(slug)
+            # Refresh row to update [x]/[ ]
+            self.update_results_table()
+        except Exception:
             pass
     
     def action_back(self) -> None:
@@ -717,8 +893,16 @@ class TUIInterface(App):
         
         # Initialize download manager
         self.download_manager = DownloadManager(
-            self.dirs
+            self.dirs,
+            max_concurrent=self.config.get('download', {}).get('max_concurrent', 4),
+            chunk_size=self.config.get('download', {}).get('chunk_size', 8192),
+            timeout=self.config.get('download', {}).get('timeout', 300),
+            max_retries=self.config.get('api', {}).get('max_retries', 3),
+            verify_downloads=self.config.get('download', {}).get('verify_downloads', True),
         )
+        pref_hosts = self.config.get('download', {}).get('preferred_hosts', []) or []
+        if pref_hosts:
+            self.download_manager.set_preferred_hosts(pref_hosts)
     
     def compose(self) -> ComposeResult:
         """Create the main application layout."""
