@@ -96,7 +96,7 @@ except ImportError:
 pygame = None
 
 from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, SearchFilter
-from ..api import CrocDBClient, ROMEntry
+from ..core.crocdb_client import CrocDBClient, ROMEntry
 from ..core import DownloadManager, DownloadProgress
 from ..locales import get_i18n, t
 from ..utils import format_file_size, sanitize_filename

@@ -13,8 +13,8 @@ from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from loguru import logger
 
-from ..api.crocdb_client import CrocDBClient, ROMEntry, SearchResult
-from ..utils.helpers import (
+from ..core.crocdb_client import CrocDBClient, ROMEntry, SearchResult
+from ..core.helpers import (
     normalize_text,
     calculate_similarity,
     extract_year_from_title,

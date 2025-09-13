@@ -31,7 +31,7 @@ except ImportError:
 
 from loguru import logger
 from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, SearchFilter
-from ..api import CrocDBClient
+from ..core.crocdb_client import CrocDBClient
 from ..core import DownloadManager
 from ..locales import get_i18n, t
 from ..utils import format_file_size, sanitize_filename

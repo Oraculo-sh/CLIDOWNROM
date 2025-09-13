@@ -16,15 +16,23 @@ import glob
 from pathlib import Path
 from loguru import logger
 
-# Add src to path for imports
-src_path = Path(__file__).parent / "src"
-sys.path.insert(0, str(src_path))
+# Removed legacy 'src' path insertion; now using package imports
+# src_path = Path(__file__).parent / "src"
+# sys.path.insert(0, str(src_path))
+
+# Enforce minimum Python version early (before heavy imports)
+try:
+    from source.core.version import check_python_version as _check_py
+    _check_py()
+except Exception as _ver_err:
+    print(f"Error: {_ver_err}")
+    sys.exit(1)
 
 # Core imports
-from src.core import DirectoryManager, ConfigManager, LogManager
-from src.locales import init_i18n, t
-from src.utils import __version__, get_version_string
-from src.interfaces import (
+from source.core import DirectoryManager, ConfigManager, LogManager
+from source.locales import init_i18n, t
+from source.utils import __version__, get_version_string
+from source.interfaces import (
     CLIInterface, 
     ShellInterface,
     get_available_interfaces,
@@ -40,7 +48,7 @@ def get_available_languages() -> list:
     Returns:
         List of available language codes
     """
-    locales_dir = Path(__file__).parent / "src" / "locales"
+    locales_dir = Path(__file__).parent / "locales"
     yaml_files = glob.glob(str(locales_dir / "*.yaml"))
     
     languages = ["auto"]  # Always include auto option
@@ -268,6 +276,17 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Reset configuration to defaults"
     )
+    # Options that can be combined with above actions
+    config_parser.add_argument(
+        "--save",
+        action="store_true",
+        help="Save current configuration to disk"
+    )
+    config_parser.add_argument(
+        "--format", "-f",
+        choices=["json", "yaml"],
+        help="Output format for list/get (default: json)"
+    )
     
     return parser
 
@@ -303,7 +322,7 @@ def initialize_application(args) -> tuple:
         config_manager.set("interface", "language", args.language)
     
     # Initialize internationalization
-    from src.locales import get_i18n
+    from source.locales import get_i18n
     language = config_manager.get("interface", "language", "auto")
     # Always initialize with default fallback 'en_us'
     init_i18n(directory_manager.get_path('locales'), 'en_us')
@@ -384,23 +403,28 @@ def main():
             # Build argument list for CLIInterface
             cli_args = []
             if args.command == 'config':
-                # Map main-level flags to CLI subcommands for compatibility
+                # Map main-level flags to CLI subcommands using the same flags expected by CLIInterface
+                cli_args = ['config']
                 if hasattr(args, 'list') and args.list:
-                    cli_args = ['config', 'list']
+                    cli_args.append('--list')
                 elif hasattr(args, 'reset') and args.reset:
-                    cli_args = ['config', 'reset']
+                    cli_args.append('--reset')
                 elif hasattr(args, 'get') and args.get:
-                    cli_args = ['config', 'get', args.get]
+                    cli_args.extend(['--get', args.get])
                 elif hasattr(args, 'set') and args.set:
                     # args.set is [KEY, VALUE]
                     key_value = args.set if isinstance(args.set, (list, tuple)) else []
-                    cli_args = ['config', 'set', *key_value]
-                else:
-                    # Support "config list" style captured as unknown
-                    if unknown:
-                        cli_args = ['config', *unknown]
-                    else:
-                        cli_args = ['config']
+                    if len(key_value) >= 2:
+                        cli_args.extend(['--set', key_value[0], key_value[1]])
+                # Optionally persist changes
+                if hasattr(args, 'save') and args.save:
+                    cli_args.append('--save')
+                # Forward format if provided (supported by CLIInterface)
+                if hasattr(args, 'format') and args.format:
+                    cli_args.extend(['--format', args.format])
+                # Append any unknown args to allow extra flags passthrough
+                if unknown:
+                    cli_args.extend(unknown)
             else:
                 # Build CLI args from parsed arguments
                 if args.command:
@@ -422,18 +446,11 @@ def main():
                             cli_args.extend(['--format', args.format])
                     
                     elif args.command == 'download':
-                        if hasattr(args, 'target') and args.target:
-                            cli_args.append(args.target)
-                        if hasattr(args, 'platform') and args.platform:
-                            cli_args.extend(['--platform', args.platform])
-                        if hasattr(args, 'region') and args.region:
-                            cli_args.extend(['--region', args.region])
+                        # CLIInterface expects: download <target> [--output DIR]
+                        if hasattr(args, 'id') and args.id:
+                            cli_args.append(args.id)
                         if hasattr(args, 'output') and args.output:
                             cli_args.extend(['--output', args.output])
-                        if hasattr(args, 'all') and args.all:
-                            cli_args.append('--all')
-                        if hasattr(args, 'no_boxart') and args.no_boxart:
-                            cli_args.append('--no-boxart')
                     
                     elif args.command == 'info':
                         if hasattr(args, 'id') and args.id:

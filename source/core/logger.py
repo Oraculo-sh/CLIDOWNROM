@@ -15,7 +15,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 from loguru import logger
-from ..utils import format_file_size
+from .helpers import format_file_size
 
 
 class LogManager:

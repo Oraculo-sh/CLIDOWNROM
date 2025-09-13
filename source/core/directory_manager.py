@@ -37,10 +37,10 @@ class DirectoryManager:
             'temp_downloads': self.base_path / 'TEMP' / 'downloads',
             'temp_test': self.base_path / 'TEMP' / 'teste',
             'logs': self.base_path / 'logs',
-            'config': self.base_path / 'src' / 'config',
+            'config': self.base_path / 'source' / 'config',
             # Cache agora segue automaticamente o diretório TEMP
             'cache': self.base_path / 'TEMP' / 'cache',
-            'locales': self.base_path / 'src' / 'locales'
+            'locales': self.base_path / 'source' / 'locales'
         }
     
     def ensure_directories(self) -> bool:

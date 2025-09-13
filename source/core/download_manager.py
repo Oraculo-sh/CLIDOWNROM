@@ -23,7 +23,7 @@ from urllib.parse import urlparse
 from loguru import logger
 from tqdm import tqdm
 
-from ..api.crocdb_client import ROMEntry
+from ..core.crocdb_client import ROMEntry
 from ..core.directory_manager import DirectoryManager
 from ..utils import sanitize_filename
 

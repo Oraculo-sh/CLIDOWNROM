@@ -13,13 +13,15 @@ import argparse
 import json
 import os
 import sys
+import yaml
 from typing import List, Optional
 from loguru import logger
 
 from ..core.search_engine import SearchEngine, SearchFilter
 from ..core.config import ConfigManager
-from ..api import CrocDBClient
+from ..core.crocdb_client import CrocDBClient
 from ..utils import format_file_size
+from ..core import DownloadManager, DownloadProgress
 
 
 class CLIInterface:
@@ -38,6 +40,19 @@ class CLIInterface:
             retry_delay=api_config.get('retry_delay', 1)
         )
         self.search_engine = SearchEngine(self.api_client)
+        # Inicializa DownloadManager conforme configuração
+        dl_conf = self.config_manager.get('download', {}) or {}
+        self.download_manager = DownloadManager(
+            self.dirs,
+            max_concurrent=dl_conf.get('max_concurrent', 4),
+            chunk_size=dl_conf.get('chunk_size', 8192),
+            timeout=dl_conf.get('timeout', 300),
+            max_retries=api_config.get('max_retries', 3),
+            verify_downloads=dl_conf.get('verify_downloads', True),
+        )
+        pref_hosts = dl_conf.get('preferred_hosts', []) or []
+        if pref_hosts:
+            self.download_manager.set_preferred_hosts(pref_hosts)
         self.cached_results = []  # Cache de ROMScore para numeração contínua e downloads
         self.cached_query = ""
         self.cached_filter = None
@@ -92,6 +107,16 @@ class CLIInterface:
         dl_parser.add_argument("target", help="Slug/ID ou índice do resultado (ex.: 1, 15)")
         dl_parser.add_argument("--output", "-o", default=".", help="Diretório de saída")
 
+        # config
+        cfg_parser = subparsers.add_parser("config", help="Gerenciar configurações")
+        cfg_group = cfg_parser.add_mutually_exclusive_group(required=True)
+        cfg_group.add_argument("--list", action="store_true", help="Listar todas as configurações")
+        cfg_group.add_argument("--get", metavar="KEY", help="Obter valor (formato section.key)")
+        cfg_group.add_argument("--set", nargs=2, metavar=("KEY", "VALUE"), help="Definir valor (formato section.key VALUE)")
+        cfg_group.add_argument("--save", action="store_true", help="Salvar configurações em arquivo")
+        cfg_group.add_argument("--reset", action="store_true", help="Resetar arquivo de configuração para o padrão")
+        cfg_parser.add_argument("--format", choices=["json", "yaml"], default="json", help="Formato de exibição para --list")
+
         return parser
 
     def run(self, args: Optional[List[str]] = None):
@@ -106,6 +131,8 @@ class CLIInterface:
             return self._cmd_info(args)
         elif command == "download":
             return self._cmd_download(args)
+        elif command == "config":
+            return self._cmd_config(args)
         else:
             self.parser.print_help()
             return 1
@@ -258,25 +285,111 @@ class CLIInterface:
                 print("ROM não encontrada pelo ID informado.")
                 return 1
 
-        # Realiza download via api_client
+        # Realiza download usando DownloadManager
         try:
-            os.makedirs(output_dir, exist_ok=True)
-            download_url = None
-            for link in (rom.links or []):
-                if link.get('type') == 'Game' and link.get('url'):
-                    download_url = link['url']
-                    break
-            if not download_url:
-                print("Nenhum link de download disponível para esta ROM.")
+            import asyncio
+            result = asyncio.run(
+                self.download_manager.download_rom(
+                    rom,
+                    download_boxart=True,
+                    progress_callback=self._download_progress_callback
+                )
+            )
+
+            if not result or not result.success:
+                err = getattr(result, 'error', 'Falha desconhecida no download') if result else 'Falha desconhecida no download'
+                print(f"{err}")
                 return 1
-            filename = f"{rom.slug}.zip"
-            dest_path = os.path.join(output_dir, filename)
-            from ..utils.downloader import download_file
-            download_file(download_url, dest_path, progress_callback=self._download_progress_callback)
-            print(f"Baixado: {dest_path}")
+
+            final_path = result.final_path
+
+            # Se usuário especificou diretório de saída customizado, mover arquivo
+            if output_dir and output_dir != '.':
+                try:
+                    os.makedirs(output_dir, exist_ok=True)
+                    import shutil
+                    dest_path = os.path.join(output_dir, os.path.basename(final_path)) if final_path else os.path.join(output_dir, f"{rom.slug}.zip")
+                    # Move para o destino especificado pelo usuário
+                    if final_path and os.path.abspath(final_path) != os.path.abspath(dest_path):
+                        shutil.move(final_path, dest_path)
+                        final_path = dest_path
+                except Exception as move_err:
+                    logger.warning(f"Não foi possível mover para o diretório de saída especificado: {move_err}")
+
+            print(f"Baixado: {final_path}")
             return 0
         except Exception as e:
             logger.error(f"Erro no download: {e}")
+            return 1
+
+    def _cmd_config(self, args):
+        """Gerencia configurações via linha de comando."""
+        cm = self.config_manager
+        try:
+            if getattr(args, 'list', False):
+                data = cm.get_all()
+                if args.format == 'yaml':
+                    print(yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
+                else:
+                    print(json.dumps(data, ensure_ascii=False, indent=2))
+                return 0
+            if getattr(args, 'get', None):
+                key = args.get
+                value = cm.get(key, None)
+                if isinstance(value, (dict, list)):
+                    print(json.dumps(value, ensure_ascii=False, indent=2))
+                else:
+                    print(value)
+                return 0
+            if getattr(args, 'set', None):
+                key, value_str = args.set[0], args.set[1]
+                # Conversões básicas de tipo
+                parsed: Optional[object] = value_str
+                low = value_str.strip().lower()
+                if low in ('true', 'false'):
+                    parsed = (low == 'true')
+                elif low in ('null', 'none'):
+                    parsed = None
+                else:
+                    try:
+                        if '.' in value_str:
+                            parsed = float(value_str)
+                        else:
+                            parsed = int(value_str)
+                    except ValueError:
+                        parsed = value_str  # mantém string
+                ok = cm.set(key, parsed)
+                if not ok:
+                    print(f"Falha ao definir {key}")
+                    return 1
+                # Salva imediatamente
+                if cm.save_config():
+                    print("Configuração salva.")
+                    return 0
+                else:
+                    print("Falha ao salvar configuração.")
+                    return 1
+            if getattr(args, 'save', False):
+                if cm.save_config():
+                    print("Configuração salva.")
+                    return 0
+                else:
+                    print("Falha ao salvar configuração.")
+                    return 1
+            if getattr(args, 'reset', False):
+                if cm.create_default_config():
+                    cm.load_config()
+                    print("Configuração resetada para o padrão.")
+                    return 0
+                else:
+                    print("Falha ao resetar configuração.")
+                    return 1
+            # Caso nenhum reconhecido
+            print("Ação de configuração não reconhecida.")
+            return 1
+        except Exception as e:
+            logger.error(f"Erro na gestão de configuração: {e}")
+            print(f"Erro: {e}")
             return 1
 
     # --- Display helpers ---
@@ -393,11 +506,17 @@ class CLIInterface:
         for link in (rom.links or []):
             print(f"- {link.get('type')}: {link.get('url')}")
 
-    def _download_progress_callback(self, downloaded, total_size):
-        if total_size > 0:
-            percent = downloaded / total_size * 100
-            sys.stdout.write(f"\rBaixando: {percent:.1f}%")
+    def _download_progress_callback(self, progress: DownloadProgress):
+        """Callback de progresso compatível com DownloadManager."""
+        try:
+            pct = getattr(progress, 'percentage', None)
+            status = getattr(progress, 'status', '')
+            if pct is not None:
+                sys.stdout.write(f"\rBaixando: {pct:.1f}% ({status})")
+            else:
+                sys.stdout.write(f"\rBaixando... ({status})")
             sys.stdout.flush()
-        else:
+        except Exception:
+            # fallback silencioso para não interromper o fluxo em caso de incompatibilidades
             sys.stdout.write("\rBaixando...")
             sys.stdout.flush()

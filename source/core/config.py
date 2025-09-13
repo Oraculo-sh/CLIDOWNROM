@@ -87,7 +87,7 @@ class ConfigManager:
     
     def _get_default_config_path(self) -> Path:
         """Retorna o caminho padrão do arquivo de configuração."""
-        return Path.cwd() / 'src' / 'config' / 'config.yml'
+        return Path.cwd() / 'source' / 'config' / 'config.yml'
 
     def load_config(self) -> bool:
         """Carrega as configurações do arquivo e ambiente.
