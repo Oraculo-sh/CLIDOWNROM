@@ -203,3 +203,7 @@ CLIDOWNROM-*.zip
 shell_history.txt
 /logs/
 *.log
+
+commands.md 
+model.md 
+.trae/
