@@ -22,6 +22,7 @@ __all__ = [
     "DirectoryManager",
     "ConfigManager",
     "LogManager",
+    "CacheManager",
     "SearchEngine",
     "SearchFilter",
     "ROMScore",
@@ -36,10 +37,11 @@ __all__ = [
 
 # Mapa de símbolos -> submódulos para lazy import
 _NAME_TO_MODULE = {
-    # directory/config/logger
+    # directory/config/logger/cache
     "DirectoryManager": "directory_manager",
-    "ConfigManager": "config",
-    "LogManager": "logger",
+    "ConfigManager": "config_manager",
+    "LogManager": "logger_system",
+    "CacheManager": "cache_manager",
     # search
     "SearchEngine": "search_engine",
     "SearchFilter": "search_engine",
@@ -58,8 +60,9 @@ _NAME_TO_MODULE = {
 if TYPE_CHECKING:
     # Ajuda para type checkers sem custo em runtime
     from .directory_manager import DirectoryManager  # noqa: F401
-    from .config import ConfigManager  # noqa: F401
-    from .logger import LogManager  # noqa: F401
+    from .config_manager import ConfigManager  # noqa: F401
+    from .logger_system import LogManager  # noqa: F401
+    from .cache_manager import CacheManager  # noqa: F401
     from .search_engine import SearchEngine, SearchFilter, ROMScore  # noqa: F401
     from .download_manager import (
         DownloadManager,
