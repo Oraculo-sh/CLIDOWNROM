@@ -25,7 +25,7 @@ from tqdm import tqdm
 
 from ..core.crocdb_client import ROMEntry
 from ..core.directory_manager import DirectoryManager
-from ..utils import sanitize_filename
+from ..core.helpers import sanitize_filename
 
 
 @dataclass
@@ -475,7 +475,60 @@ class DownloadManager:
         except Exception as e:
             logger.error(f"Erro ao mover arquivo: {e}")
             return None
-    
+
+    async def move_boxart_to_final_destination(self,
+                                               temp_path: Path,
+                                               platform: str,
+                                               filename: str) -> Optional[str]:
+        """Move a boxart baixada para o diretório final de capas.
+        
+        Args:
+            temp_path: Caminho temporário da capa
+            platform: Plataforma da ROM
+            filename: Nome do arquivo de capa
+        """
+        try:
+            final_path = self.dir_manager.get_boxart_path(platform, filename)
+            final_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(temp_path), str(final_path))
+            logger.info(f"Boxart movida para: {final_path}")
+            return str(final_path)
+        except Exception as e:
+            logger.error(f"Erro ao mover boxart: {e}")
+            return None
+
+    async def _download_boxart(self, rom_entry: ROMEntry) -> Optional[str]:
+        """Baixa a imagem de capa (boxart) da ROM e move para o destino final.
+        
+        Returns:
+            Caminho final da boxart ou None em caso de falha.
+        """
+        try:
+            if not rom_entry.boxart_url:
+                logger.warning(f"Sem URL de boxart para: {rom_entry.title}")
+                return None
+            
+            # Define nome do arquivo da boxart
+            parsed = urlparse(rom_entry.boxart_url)
+            url_name = os.path.basename(parsed.path) if parsed.path else ''
+            _, ext = os.path.splitext(url_name)
+            if not ext:
+                ext = '.jpg'  # padrão conservador
+            base_name = sanitize_filename(rom_entry.slug or rom_entry.title)
+            filename = f"{base_name}{ext}"
+            
+            # Reusa o pipeline de download com progress callback
+            result = await self.download_file(rom_entry.boxart_url, filename)
+            if not result.success or not result.final_path:
+                logger.error(f"Falha ao baixar boxart de: {rom_entry.title}")
+                return None
+            
+            final = await self.move_boxart_to_final_destination(Path(result.final_path), rom_entry.platform, filename)
+            return final
+        except Exception as e:
+            logger.error(f"Erro ao baixar boxart: {e}")
+            return None
+
     async def download_rom(self, rom_entry: ROMEntry, download_boxart: bool = True, progress_callback: Optional[Callable] = None) -> DownloadResult:
         """Baixa uma ROM completa (arquivo + capa opcional).
         
@@ -583,3 +636,21 @@ class DownloadManager:
         logger.info(f"Downloads concluídos: {successful}/{len(rom_entries)} bem-sucedidos")
         
         return processed_results
+
+    async def download_boxart(self, rom_entry: ROMEntry, progress_callback: Optional[Callable] = None) -> Optional[str]:
+        """Baixa somente a boxart de uma ROM e retorna o caminho final.
+        
+        Args:
+            rom_entry: Entrada da ROM
+            progress_callback: Callback temporário para progresso desta chamada
+        """
+        prev_cb = self.progress_callback
+        if progress_callback is not None:
+            try:
+                self.set_progress_callback(progress_callback)
+            except Exception:
+                self.progress_callback = progress_callback
+        try:
+            return await self._download_boxart(rom_entry)
+        finally:
+            self.progress_callback = prev_cb
