@@ -9,8 +9,8 @@ cache:
   ttl_hours: 24
 directories:
   logs: logs
-  roms: ROMS
-  temp: TEMP
+  roms: ROMs
+  temp: temp
 download:
   chunk_size: 8192
   download_boxart: true
@@ -20,11 +20,11 @@ download:
   verify_downloads: true
 interface:
   confirm_downloads: true
-  language: auto
+  language: en_us # auto, en_us, pt_br, es_es, ru_ru, etc.
   show_progress: true
   theme: default
 logging:
-  console_enabled: true
+  console_enabled: false
   file_enabled: true
   level: INFO
   max_log_files: 10
