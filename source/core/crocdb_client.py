@@ -35,9 +35,26 @@ class ROMEntry:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'ROMEntry':
         """Cria uma instância a partir de dados da API."""
+        # Aceita múltiplas variações de chave para o identificador da ROM
+        # Ex.: 'rom_id' (preferido), 'ROM_ID', 'romId', 'id', 'serial', 'catalog_id'
+        raw_rom_id = (
+            data.get('rom_id')
+            or data.get('ROM_ID')
+            or data.get('romId')
+            or data.get('RomID')
+            or data.get('id')
+            or data.get('serial')
+            or data.get('catalog_id')
+            or data.get('CatalogID')
+        )
+        # Normaliza para string quando possível
+        rom_id = str(raw_rom_id) if (raw_rom_id is not None and raw_rom_id != '') else None
+        if rom_id is None:
+            # Log em nível debug para ajudar a diagnosticar casos onde o ID vem ausente ou com nome inesperado
+            logger.debug(f"ROMEntry.from_dict: rom_id ausente nas chaves conhecidas. Chaves disponíveis: {list(data.keys())}")
         return cls(
             slug=data.get('slug', ''),
-            rom_id=data.get('rom_id'),
+            rom_id=rom_id,
             title=data.get('title', ''),
             platform=data.get('platform', ''),
             boxart_url=data.get('boxart_url'),
@@ -129,34 +146,52 @@ class ROMEntry:
         return ordered_hosts
 
     @property
+    def formats_list(self) -> List[str]:
+        """Lista de formatos únicos disponíveis para a ROM (apenas links de jogo)."""
+        if not self.links:
+            return []
+        seen = set()
+        ordered_formats: List[str] = []
+        for link in self.links:
+            if link.get('type') != 'Game':
+                continue
+            fmt = (link.get('format') or '').strip()
+            if fmt and fmt.lower() not in seen:
+                seen.add(fmt.lower())
+                ordered_formats.append(fmt)
+        return ordered_formats
+
+    @property
+    def hosts_display(self) -> str:
+        hosts = self.hosts_list
+        return ", ".join(hosts) if hosts else "-"
+
+    @property
+    def formats_display(self) -> str:
+        fmts = self.formats_list
+        return ", ".join(fmts) if fmts else "-"
+
+    # ----- Propriedades de compatibilidade para UI (mantêm nomes antigos) -----
+    @property
     def hosts(self) -> str:
-        """Hosts em formato de texto para exibição (separados por vírgula)."""
-        return ', '.join(self.hosts_list)
+        """Hosts em formato de texto para exibição (compatibilidade)."""
+        return ", ".join(self.hosts_list)
 
     @property
     def file_format(self) -> str:
-        """Formato do arquivo (ex.: ZIP, 7Z, ISO), com fallback por filename/URL."""
+        """Formato principal do arquivo (ex.: ZIP, 7Z, ISO), preferindo link.format e com fallback por filename/URL."""
         best_link = self.get_best_download_link()
         if not best_link:
             return ''
+        # Tenta usar o campo 'format' quando disponível
         fmt = (best_link.get('format') or '').strip()
         if fmt:
             return fmt.upper()
-        # tenta inferir por filename ou url
-        filename = (best_link.get('filename') or '').strip()
-        if not filename:
-            url = best_link.get('url') or ''
-            try:
-                path = urlparse(url).path
-                filename = os.path.basename(unquote(path))
-            except Exception:
-                filename = ''
-        if filename:
-            _, ext = os.path.splitext(filename)
-            if ext:
-                ext = ext.lstrip('.').upper()
-                return ext
-        return ''
+        # Fallback pelo nome do arquivo
+        url = best_link.get('url') or ''
+        filename = os.path.basename(unquote(url))
+        _, ext = os.path.splitext(filename)
+        return ext.replace('.', '').upper()
 
 
 @dataclass
