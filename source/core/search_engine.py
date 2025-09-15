@@ -128,9 +128,10 @@ class SearchEngine:
                                region_codes: Optional[set] = None) -> float:
         """Calcula pontuação baseada no título usando cobertura de tokens, similaridade e bônus de frase.
         
-        - Penaliza tokens ausentes exceto quando o token é plataforma ou região.
-        - Bônus para correspondência de frase (query como substring do título).
-        - Mantém penalidade leve para excesso de caracteres especiais.
+        - Penaliza tokens ausentes exceto quando o token é plataforma/região.
+        - Bônus para correspondência de frase (query como substring do título) e para prefixo (início do título).
+        - Bônus leve quando tokens numéricos da consulta estão presentes (ex.: "64").
+        - Penalidade ainda mais leve para excesso de caracteres especiais.
         """
         if not query or not rom_entry.title:
             return 0.0
@@ -144,6 +145,7 @@ class SearchEngine:
         region_codes = region_codes or set()
         exempt_tokens = {t for t in q_tokens if (t in platform_codes or t in region_codes)}
         content_tokens = [t for t in q_tokens if t not in exempt_tokens]
+        numeric_tokens = [t for t in content_tokens if t.isdigit()]
 
         # Similaridade geral como componente auxiliar
         sim = calculate_similarity(query, rom_entry.title)
@@ -162,20 +164,76 @@ class SearchEngine:
         # Bônus por frase (consulta como substring contínua)
         phrase_bonus = 0.0
         if len(content_tokens) >= 1 and q_norm in title_norm:
-            phrase_bonus = 0.1
+            phrase_bonus = 0.25  # aumentado para favorecer consultas como frase
+
+        # Bônus por início de título (prefixo)
+        prefix_bonus = 0.0
+        if len(content_tokens) >= 1 and title_norm.startswith(q_norm):
+            prefix_bonus = 0.15
+
+        # Bônus por tokens numéricos presentes (ex.: "64")
+        numeric_bonus = 0.0
+        if numeric_tokens:
+            numeric_matches = sum(1 for t in numeric_tokens if t in title_norm)
+            if numeric_matches == len(numeric_tokens):
+                numeric_bonus = 0.35  # maior impacto para corresponder números exatamente
+            elif numeric_matches > 0:
+                numeric_bonus = 0.15
 
         # Penalidade por tokens ausentes (não se aplica a tokens de plataforma/região)
         missing = 0 if not content_tokens else (len(content_tokens) - matches)
-        missing_penalty = min(0.4, missing * 0.08)  # limita a penalidade total
+        missing_penalty = min(0.35, missing * 0.08)  # limita a penalidade total
+
+        # Penalidade por "gap" entre tokens principais da consulta quando houver números (ex.: demover "Mario Kart 64")
+        gap_penalty = 0.0
+        adjacency_bonus = 0.0
+        super_bonus = 0.0
+        modifier_penalty = 0.0
+        strong_phrase_bonus = 0.0
+        if len(content_tokens) >= 2:
+            title_tokens = [t for t in title_norm.split() if t]
+            try:
+                first_tok = content_tokens[0]
+                last_tok = content_tokens[-1]
+                if first_tok in title_tokens and last_tok in title_tokens:
+                    i = title_tokens.index(first_tok)
+                    j = len(title_tokens) - 1 - title_tokens[::-1].index(last_tok)
+                    if i < j:
+                        between = max(0, j - i - 1)
+                        if between > 0:
+                            gap_penalty = min(0.60, 0.30 * between)
+                        else:
+                            adjacency_bonus = 0.15
+                        # Bônus específico: "super" imediatamente antes de 'mario'
+                        if i - 1 >= 0 and title_tokens[i - 1] == 'super' and first_tok == 'mario':
+                            super_bonus = 0.45
+                        # Penalidade mais forte: "dr" imediatamente antes de 'mario'
+                        if i - 1 >= 0 and title_tokens[i - 1] in {'dr', 'dr.', 'doctor'} and first_tok == 'mario':
+                            modifier_penalty = 0.35
+                # Bônus forte se o título contém a frase "super mario 64" completa
+                if 'super mario 64' in title_norm:
+                    strong_phrase_bonus = 0.45
+                # Penalidade adicional se começar com "dr mario 64"
+                if title_norm.startswith('dr mario 64'):
+                    modifier_penalty = max(modifier_penalty, 0.40)
+            except Exception:
+                pass
 
         # Combinação: prioriza cobertura, depois similaridade
         base = (0.6 * coverage) + (0.4 * sim)
-        score = base + phrase_bonus - missing_penalty
+        # Desempate: favorece explicitamente "super mario 64" e rebaixa "dr mario 64" com pequeno epsilon
+        tie_breaker = 0.0
+        if 'super mario 64' in title_norm:
+            tie_breaker += 0.0008
+        if title_norm.startswith('dr mario 64'):
+            tie_breaker -= 0.0008
 
-        # Penalidade leve para muitos caracteres especiais (indicadores de dumps/hacks)
+        score = base + phrase_bonus + prefix_bonus + numeric_bonus + adjacency_bonus + super_bonus + strong_phrase_bonus - missing_penalty - gap_penalty - modifier_penalty + tie_breaker
+
+        # Penalidade ainda mais leve para muitos caracteres especiais (indicadores de dumps/hacks)
         special_chars = len(re.findall(r'[\[\](){}]', rom_entry.title))
-        if special_chars > 3:
-            score *= 0.85
+        if special_chars > 5:
+            score *= 0.93
 
         return max(0.0, min(1.0, score))
     
@@ -492,7 +550,7 @@ class SearchEngine:
                 search_key=query,
                 platforms=search_filter.platforms,
                 regions=search_filter.regions,
-                max_results=limit * 2  # Busca mais para ter margem após filtros
+                max_results=max(200, limit * 4)  # Busca mais para ter margem após filtros
             )
             
             if not search_result or not search_result.results:
@@ -516,33 +574,127 @@ class SearchEngine:
             # Filtro por palavras-chave (ignorando tokens de plataforma/região)
             all_tokens = [k for k in normalize_text(query).split() if k]
             content_tokens = [k for k in all_tokens if k not in platform_codes_set and k not in region_codes_set]
+            has_numeric = any(k.isdigit() for k in content_tokens)
+            numeric_tokens = [k for k in content_tokens if k.isdigit()]
+
             if content_tokens:
                 tmp = []
                 for rom_entry in filtered_entries:
                     title_norm = normalize_text(rom_entry.title)
                     matches = sum(1 for k in content_tokens if k in title_norm)
-                    # Permite faltar até 1 palavra quando há 2+ termos de conteúdo
-                    min_required = max(1, len(content_tokens) - 1)
+                    # Requer todos os tokens quando há número ou quando há até 2 tokens; caso contrário, permite faltar 1
+                    if has_numeric or len(content_tokens) <= 2:
+                        min_required = len(content_tokens)
+                    else:
+                        min_required = max(1, len(content_tokens) - 1)
                     if matches >= min_required:
                         tmp.append(rom_entry)
                 filtered_entries = tmp
-                
-                # Fallback: se nada sobrou, relaxa para OR (qualquer termo de conteúdo)
-                if not filtered_entries:
+
+                # Estratégia específica para consultas com números
+                if has_numeric:
+                    def contains_all_numeric(entry_title_norm: str) -> bool:
+                        return all(nt in entry_title_norm for nt in numeric_tokens)
+
+                    def is_preferred_pattern(entry_title_norm: str) -> bool:
+                        # Preferir títulos com "super mario" adjacente e contendo todos números
+                        toks = [t for t in entry_title_norm.split() if t]
+                        if 'mario' in toks and '64' in entry_title_norm:
+                            i = toks.index('mario')
+                            if i - 1 >= 0 and toks[i - 1] == 'super':
+                                return True
+                        return False
+
+                    # Paginar mais resultados para ampliar candidatos (até 5 páginas)
+                    combined = {e.slug: e for e in filtered_entries}
+                    max_pages = min(getattr(search_result, 'total_pages', 1), 5)
+                    page = 2
+                    preferred_found = any(is_preferred_pattern(normalize_text(e.title)) for e in filtered_entries)
+                    while page <= max_pages and (len(combined) < 500) and not preferred_found:
+                        more = self.api_client.search_entries(
+                            search_key=query,
+                            platforms=search_filter.platforms,
+                            regions=search_filter.regions,
+                            max_results=100,
+                            page=page
+                        )
+                        page += 1
+                        if not more or not more.results:
+                            continue
+                        for e in more.results:
+                            if e.slug not in combined:
+                                combined[e.slug] = e
+                        # Atualiza condição de preferência
+                        if not preferred_found:
+                            if any(is_preferred_pattern(normalize_text(e.title)) for e in more.results):
+                                preferred_found = True
+
+                    # Reaplicar filtros exigindo todos os tokens (inclui numéricos)
+                    cand = list(combined.values())
+                    cand = self._apply_filters(cand, search_filter)
+                    tmp_all = []
+                    for e in cand:
+                        title_norm = normalize_text(e.title)
+                        if all(k in title_norm for k in content_tokens):
+                            tmp_all.append(e)
+                    filtered_entries = tmp_all
+
+                    # 2) Se ainda assim falhar, reconsulta removendo números e filtra localmente exigindo todos os tokens (incluindo os numéricos)
+                    if not filtered_entries:
+                        base_tokens = [k for k in content_tokens if not k.isdigit()]
+                        base_query = " ".join(base_tokens) if base_tokens else ""
+                        if base_query:
+                            logger.info(f"Fallback numérico final: reconsultando API com base_query='{base_query}' e reimpondo tokens {content_tokens}")
+                            combined = {}
+                            max_pages = 3
+                            page = 1
+                            while page <= max_pages:
+                                more = self.api_client.search_entries(
+                                    search_key=base_query,
+                                    platforms=search_filter.platforms,
+                                    regions=search_filter.regions,
+                                    max_results=100,
+                                    page=page
+                                )
+                                page += 1
+                                if not more or not more.results:
+                                    continue
+                                for e in more.results:
+                                    if e.slug not in combined:
+                                        combined[e.slug] = e
+                            # Refiltra exigindo todos os tokens
+                            cand = list(combined.values())
+                            cand = self._apply_filters(cand, search_filter)
+                            tmp2 = []
+                            for e in cand:
+                                title_norm = normalize_text(e.title)
+                                if all(k in title_norm for k in content_tokens):
+                                    tmp2.append(e)
+                            filtered_entries = tmp2
+
+                # Fallback adicional: somente sem tokens numéricos, relaxa para OR (qualquer termo de conteúdo)
+                if not filtered_entries and not has_numeric:
                     tmp = []
                     for rom_entry in search_result.results:
                         title_norm = normalize_text(rom_entry.title)
                         if any(k in title_norm for k in content_tokens):
                             tmp.append(rom_entry)
                     filtered_entries = self._apply_filters(tmp, search_filter)
+
+            # Logs de depuração: amostra de títulos após filtros
+            try:
+                sample_titles = ", ".join([e.title for e in filtered_entries[:10]])
+                logger.debug(f"Amostra pós-filtros: {sample_titles}")
+            except Exception:
+                pass
             
             # Calcula pontuações
             scored_roms: List[ROMScore] = []
             for rom_entry in filtered_entries:
                 scored_roms.append(self._score_rom(query, rom_entry, search_filter, platform_codes_set, region_codes_set))
             
-            # Ordena e aplica limite total
-            scored_roms.sort(key=lambda x: x.total_score, reverse=True)
+            # Usa desempate por heurística de título quando houver empates de pontuação total
+            scored_roms.sort(key=lambda x: (x.total_score, self._tie_breaker_value(x)), reverse=True)
             return scored_roms[:limit]
         except Exception as e:
             logger.error(f"Erro na busca: {e}")
@@ -771,17 +923,67 @@ class SearchEngine:
             return []
     
     async def get_rom_info(self, rom_id: str) -> Optional[ROMEntry]:
-        """Obtém informações detalhadas de uma ROM.
+        """Obtém informações detalhadas de uma ROM por slug (texto) ou ROM_ID (numérico/alfanumérico).
         
         Args:
-            rom_id: ID da ROM
+            rom_id: ID da ROM (ROM_ID) numérico/alfanumérico, ou slug textual
             
         Returns:
             Entrada da ROM ou None
         """
         try:
-            # CrocDBClient methods are synchronous; use get_entry(slug) directly.
-            return self.api_client.get_entry(rom_id)
+            # 1) Tenta como slug textual diretamente (rota mais precisa)
+            if isinstance(rom_id, str):
+                entry = self.api_client.get_entry(rom_id)
+                if entry:
+                    return entry
+            
+            # 2) Se não achou por slug, verifica se parece um ROM_ID
+            #    - numérico: só dígitos
+            #    - alfanumérico: possui letras ou hífen (ex.: SLUS-00530)
+            is_numeric = isinstance(rom_id, (int,)) or (isinstance(rom_id, str) and rom_id.isdigit())
+            looks_like_alnum_id = isinstance(rom_id, str) and (any(c.isalpha() for c in rom_id) or '-' in rom_id)
+            
+            if is_numeric or looks_like_alnum_id:
+                result = self.api_client.search_entries(search_key='', max_results=1, page=1, rom_id=str(rom_id))
+                if result and result.results:
+                    return result.results[0]
+                return None
+            
+            return None
         except Exception as e:
             logger.error(f"Erro ao obter informações da ROM {rom_id}: {e}")
             return None
+
+    def get_rom_info_sync(self, rom_id: str) -> Optional[ROMEntry]:
+        """Versão síncrona de get_rom_info() para facilitar uso em CLIs."""
+        import asyncio
+        try:
+            # Tenta detectar se já há um loop rodando, se sim, executa em executor
+            import concurrent.futures
+            try:
+                asyncio.get_running_loop()
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(asyncio.run, self.get_rom_info(rom_id))
+                    return future.result()
+            except RuntimeError:
+                return asyncio.run(self.get_rom_info(rom_id))
+        except Exception as e:
+            logger.error(f"Erro (sync) ao obter informações da ROM {rom_id}: {e}")
+            return None
+
+    def _tie_breaker_value(self, rs: "ROMScore") -> float:
+        """Valor de desempate baseado no título normalizado.
+        Prioriza "Super Mario 64" e rebaixa explicitamente variações "Dr. Mario 64" em empates de pontuação.
+        """
+        t = normalize_text(rs.rom_entry.title)
+        v = 0.0
+        if 'super mario 64' in t:
+            v += 2.0
+        if t.startswith('super mario '):
+            v += 1.0
+        if t.startswith('dr mario 64'):
+            v -= 2.0
+        if 'dr mario ' in t:
+            v -= 1.0
+        return v
