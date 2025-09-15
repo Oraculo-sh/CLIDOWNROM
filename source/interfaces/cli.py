@@ -18,7 +18,7 @@ from typing import List, Optional
 from loguru import logger
 
 from ..core.search_engine import SearchEngine, SearchFilter
-from ..core.config import ConfigManager
+from ..core.config_manager import ConfigManager
 from ..core.crocdb_client import CrocDBClient
 from ..core.helpers import format_file_size
 from ..core import DownloadManager, DownloadProgress
