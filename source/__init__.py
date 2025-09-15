@@ -12,6 +12,7 @@ License: GPL-3.0
 __all__ = [
     "core",
     "interfaces",
-    "utils",
     "locales",
+    "format_file_size",
+    "sanitize_filename",
 ]

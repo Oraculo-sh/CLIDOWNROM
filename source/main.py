@@ -31,7 +31,7 @@ except Exception as _ver_err:
 # Core imports
 from source.core import DirectoryManager, ConfigManager, LogManager
 from source.locales import init_i18n, t
-from source.utils import __version__, get_version_string
+from source.core.version import __version__, get_version_string
 from source.interfaces import (
     CLIInterface, 
     ShellInterface,
@@ -158,6 +158,18 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         type=int,
         help="Filter by year"
     )
+    # Align with CLIInterface: support page size and page
+    search_parser.add_argument(
+        "--max-results", "-m",
+        type=int,
+        help="Maximum results per page (default: 100, max: 100)"
+    )
+    search_parser.add_argument(
+        "--page",
+        type=int,
+        help="Page number (default: 1)"
+    )
+    # Legacy/compat
     search_parser.add_argument(
         "--limit", "-n",
         type=int,
@@ -244,10 +256,47 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         default=5,
         help="Number of random ROMs (default: 5)"
     )
-    random_parser.add_argument(
-        "--download",
+    # Removed --download forwarding because CLIInterface does not support it
+    
+    # Boxart command
+    boxart_parser = subparsers.add_parser(
+        "boxart",
+        help="Download boxart for a ROM"
+    )
+    boxart_parser.add_argument(
+        "--id",
+        type=str,
+        help="ROM ID or slug to fetch boxart for"
+    )
+    boxart_parser.add_argument(
+        "--platform", "-p",
+        help="Filter by platform (optional)"
+    )
+    boxart_parser.add_argument(
+        "--region", "-r",
+        help="Filter by region (optional)"
+    )
+    boxart_parser.add_argument(
+        "--force",
         action="store_true",
-        help="Download the random ROMs"
+        help="Force without confirmation"
+    )
+    boxart_parser.add_argument(
+        "--silence",
+        action="store_true",
+        help="Run silently"
+    )
+
+    # Platforms command
+    subparsers.add_parser(
+        "platforms",
+        help="List available platforms"
+    )
+
+    # Regions command
+    subparsers.add_parser(
+        "regions",
+        help="List available regions"
     )
     
     # Config command
@@ -440,6 +489,10 @@ def main():
                             cli_args.extend(['--region', args.region])
                         if hasattr(args, 'year') and args.year:
                             cli_args.extend(['--year', str(args.year)])
+                        if hasattr(args, 'max_results') and args.max_results is not None:
+                            cli_args.extend(['--max-results', str(args.max_results)])
+                        if hasattr(args, 'page') and args.page is not None:
+                            cli_args.extend(['--page', str(args.page)])
                         if hasattr(args, 'limit') and args.limit:
                             cli_args.extend(['--limit', str(args.limit)])
                         if hasattr(args, 'format') and args.format:
@@ -465,8 +518,23 @@ def main():
                             cli_args.extend(['--region', args.region])
                         if hasattr(args, 'count') and args.count:
                             cli_args.extend(['--count', str(args.count)])
-                        if hasattr(args, 'download') and args.download:
-                            cli_args.append('--download')
+                        # Do not forward --download; CLIInterface random does not support it
+
+                    elif args.command == 'boxart':
+                        if hasattr(args, 'id') and args.id:
+                            cli_args.append(args.id)
+                        if hasattr(args, 'platform') and args.platform:
+                            cli_args.extend(['--platform', args.platform])
+                        if hasattr(args, 'region') and args.region:
+                            cli_args.extend(['--region', args.region])
+                        if hasattr(args, 'force') and args.force:
+                            cli_args.append('--force')
+                        if hasattr(args, 'silence') and args.silence:
+                            cli_args.append('--silence')
+
+                    elif args.command in ('platforms', 'regions'):
+                        # No extra args
+                        pass
                 
                 # Add any unknown arguments
                 if unknown:
