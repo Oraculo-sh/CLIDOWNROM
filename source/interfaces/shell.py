@@ -34,7 +34,7 @@ from ..core import DirectoryManager, ConfigManager, LogManager, SearchEngine, Se
 from ..core.crocdb_client import CrocDBClient
 from ..core import DownloadManager
 from ..locales import get_i18n, t
-from ..utils import format_file_size, sanitize_filename
+from ..core.helpers import format_file_size, sanitize_filename
 from .cli import CLIInterface
 
 
@@ -941,12 +941,12 @@ class ShellInterface:
             # Column widths
             w_idx = 3
             w_title = 40
-            w_id = 14
-            w_platform = 12
-            w_regions = 12
+            w_id = 10
+            w_platform = 9
+            w_regions = 4
             w_hosts = 16
-            w_format = 8
-            w_size = 10
+            w_format = 7
+            w_size = 9
             
             if show_scores:
                 header = (
@@ -954,12 +954,11 @@ class ShellInterface:
                     "Título".ljust(w_title) + " " +
                     "ID".ljust(w_id) + " " +
                     "Platform".ljust(w_platform) + " " +
-                    "Regions".ljust(w_regions) + " " +
+                    "Reg.".ljust(w_regions) + " " +
                     "Hosts".ljust(w_hosts) + " " +
                     "Format".ljust(w_format) + " " +
                     "Size".rjust(w_size) + " " +
-                    "Score"
-                )
+                    "Score".rjust(w_score) if show_scores else "")
                 sep = (
                     "-" * w_idx + " " +
                     "-" * w_title + " " +
@@ -977,7 +976,7 @@ class ShellInterface:
                     "Título".ljust(w_title) + " " +
                     "ID".ljust(w_id) + " " +
                     "Platform".ljust(w_platform) + " " +
-                    "Regions".ljust(w_regions) + " " +
+                    "Reg.".ljust(w_regions) + " " +
                     "Hosts".ljust(w_hosts) + " " +
                     "Format".ljust(w_format) + " " +
                     "Size".rjust(w_size)
@@ -1013,8 +1012,8 @@ class ShellInterface:
                 regions_str = (regions_str[:w_regions-1] + '…') if len(regions_str) > w_regions else regions_str
                 regions_str = regions_str.ljust(w_regions)
 
-                # ID (slug preferred)
-                rom_id = getattr(rom, 'slug', None) or getattr(rom, 'rom_id', '') or ''
+                # ID (rom_id preferido, fallback para slug)
+                rom_id = getattr(rom, 'rom_id', None) or getattr(rom, 'slug', '') or ''
                 rom_id_disp = (str(rom_id)[:w_id-1] + '…') if len(str(rom_id)) > w_id else str(rom_id)
                 rom_id_disp = rom_id_disp.ljust(w_id)
 

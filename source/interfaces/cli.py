@@ -20,7 +20,7 @@ from loguru import logger
 from ..core.search_engine import SearchEngine, SearchFilter
 from ..core.config import ConfigManager
 from ..core.crocdb_client import CrocDBClient
-from ..utils import format_file_size
+from ..core.helpers import format_file_size
 from ..core import DownloadManager, DownloadProgress
 
 
@@ -84,6 +84,14 @@ class CLIInterface:
         search_parser.add_argument(
             "--year", "-y", type=int, help="Ano alvo (aproximação)"
         )
+        # novo: alinhado ao model.md
+        search_parser.add_argument(
+            "--max-results", "-m", type=int, default=None, help="Máximo de resultados por página (padrão 100, máximo 100)"
+        )
+        search_parser.add_argument(
+            "--page", type=int, default=None, help="Número da página inicial (padrão: 1)"
+        )
+        # legado: mantido por compatibilidade
         search_parser.add_argument(
             "--limit", "-l", type=int, default=None, help="Limite total de resultados (sobrepõe config)"
         )
@@ -104,8 +112,36 @@ class CLIInterface:
 
         # download
         dl_parser = subparsers.add_parser("download", help="Baixar ROM por ID ou por posição nos resultados")
-        dl_parser.add_argument("target", help="Slug/ID ou índice do resultado (ex.: 1, 15)")
+        dl_parser.add_argument("target", nargs='?', default=None, help="Slug/ID ou índice do resultado (ex.: 1, 15)")
+        dl_parser.add_argument("--romid", help="ROM ID específico", default=None)
+        dl_parser.add_argument("--slug", help="Slug específico", default=None)
+        dl_parser.add_argument("--platform", "-p", nargs="*", help="Filtrar por plataforma(s)", default=None)
+        dl_parser.add_argument("--region", "-r", nargs="*", help="Filtrar por região(ões)", default=None)
+        dl_parser.add_argument("--no-boxart", action="store_true", help="Baixa sem boxart")
+        dl_parser.add_argument("--force", "-f", action="store_true", help="Baixa sem confirmação")
+        dl_parser.add_argument("--silence", "-s", action="store_true", help="Baixa silenciosamente")
         dl_parser.add_argument("--output", "-o", default=".", help="Diretório de saída")
+
+        # boxart
+        box_parser = subparsers.add_parser("boxart", help="Baixar somente a boxart da ROM")
+        box_parser.add_argument("target", nargs='?', default=None, help="Slug/ID ou índice do resultado (ex.: 1, 15)")
+        box_parser.add_argument("--romid", help="ROM ID específico", default=None)
+        box_parser.add_argument("--slug", help="Slug específico", default=None)
+        box_parser.add_argument("--platform", "-p", nargs="*", help="Filtrar por plataforma(s)", default=None)
+        box_parser.add_argument("--region", "-r", nargs="*", help="Filtrar por região(ões)", default=None)
+        box_parser.add_argument("--force", "-f", action="store_true", help="Baixa sem confirmação")
+        box_parser.add_argument("--silence", "-s", action="store_true", help="Baixa silenciosamente")
+
+        # random
+        rnd_parser = subparsers.add_parser("random", help="Obter ROM(s) aleatória(s)")
+        rnd_parser.add_argument("--count", "-n", type=int, default=1, help="Quantidade de ROMs (padrão: 1)")
+        rnd_parser.add_argument("--platform", "-p", nargs="*", help="Filtrar por plataforma(s)", default=None)
+        rnd_parser.add_argument("--region", "-r", nargs="*", help="Filtrar por região(ões)", default=None)
+
+        # platforms
+        subparsers.add_parser("platforms", help="Listar plataformas disponíveis")
+        # regions
+        subparsers.add_parser("regions", help="Listar regiões disponíveis")
 
         # config
         cfg_parser = subparsers.add_parser("config", help="Gerenciar configurações")
@@ -131,6 +167,14 @@ class CLIInterface:
             return self._cmd_info(args)
         elif command == "download":
             return self._cmd_download(args)
+        elif command == "boxart":
+            return self._cmd_boxart(args)
+        elif command == "random":
+            return self._cmd_random(args)
+        elif command == "platforms":
+            return self._cmd_platforms(args)
+        elif command == "regions":
+            return self._cmd_regions(args)
         elif command == "config":
             return self._cmd_config(args)
         else:
@@ -144,8 +188,19 @@ class CLIInterface:
 
         # Lê config para paginação
         search_conf = self.config_manager.get("search", {})
-        max_results = args.limit if args.limit is not None else search_conf.get("max_results", 100)
-        per_page = args.per_page if args.per_page is not None else search_conf.get("results_per_page", 10)
+        # novo: "max-results" define itens por página (padrão 100, máximo 100)
+        per_page = (
+            args.max_results if getattr(args, 'max_results', None) is not None else (
+                args.per_page if getattr(args, 'per_page', None) is not None else search_conf.get("results_per_page", None)
+            )
+        )
+        if per_page is None:
+            per_page = 100
+        if per_page > 100:
+            print("Erro: --max-results deve ser no máximo 100.")
+            return 1
+        # Limite total legado (mantido por compatibilidade)
+        max_results = args.limit if getattr(args, 'limit', None) is not None else search_conf.get("max_results", per_page)
 
         # Filtros
         search_filter = SearchFilter(
@@ -161,7 +216,8 @@ class CLIInterface:
         self.cached_filter = search_filter
         self.cached_total = 0
 
-        page = 1
+        # Página inicial (alinhado ao model.md)
+        page = args.page if getattr(args, 'page', None) else 1
         while True:
             paged = self.search_engine.search_paged_sync(
                 query=query,
@@ -196,6 +252,8 @@ class CLIInterface:
                 break
 
             # Prompt de ação combinado: seleção por índices ou navegação
+            # Removido no CLI para evitar pausas: não exibir prompt nem ler entrada
+            break
             start_num = (page - 1) * per_page + 1
             end_num = min(paged.total, page * per_page)
             action_prompt = "> Digite o(s) número(s) referentes as roms para baixar (separados por vírgula), ou [n] próxima pág, [p] pág anterior, [0] cancelar, [q] sair: "
@@ -245,7 +303,7 @@ class CLIInterface:
             # Efetuar downloads sequenciais usando o comando 'download'
             import argparse as _argparse
             for idx in unique_indices:
-                dl_args = _argparse.Namespace(target=str(idx), output='.')
+                dl_args = _argparse.Namespace(target=str(idx), output='.', romid=None, slug=None, platform=None, region=None, no_boxart=False, force=False, silence=False)
                 self._cmd_download(dl_args)
             break
 
@@ -265,25 +323,41 @@ class CLIInterface:
         return 0
 
     def _cmd_download(self, args):
-        target = args.target
-        output_dir = args.output
+        target = getattr(args, 'target', None)
+        output_dir = getattr(args, 'output', '.')
+        romid = getattr(args, 'romid', None)
+        slug = getattr(args, 'slug', None)
+        no_boxart = getattr(args, 'no_boxart', False)
+        # platform/region flags aceitos para alinhamento, atualmente sem efeito direto aqui
+        _platforms = getattr(args, 'platform', None)
+        _regions = getattr(args, 'region', None)
 
-        # Se for índice numérico, busca no cache
-        if target.isdigit():
-            idx = int(target) - 1
-            if 0 <= idx < len(self.cached_results):
-                rom = self.cached_results[idx].rom_entry
-            else:
-                print("Índice fora do intervalo. Execute uma busca primeiro e escolha um índice válido.")
-                return 1
-        else:
-            # Trata como slug/ID direto
-            rom = None
+        # Resolve ROM
+        rom = None
+        if romid or slug:
+            rom_key = romid or slug
             import asyncio
-            rom = asyncio.run(self.search_engine.get_rom_info(target))
+            rom = asyncio.run(self.search_engine.get_rom_info(rom_key))
             if not rom:
-                print("ROM não encontrada pelo ID informado.")
+                print("ROM não encontrada pelo identificador informado.")
                 return 1
+        elif target:
+            if target.isdigit():
+                idx = int(target) - 1
+                if 0 <= idx < len(self.cached_results):
+                    rom = self.cached_results[idx].rom_entry
+                else:
+                    print("Índice fora do intervalo. Execute uma busca primeiro e escolha um índice válido.")
+                    return 1
+            else:
+                import asyncio
+                rom = asyncio.run(self.search_engine.get_rom_info(target))
+                if not rom:
+                    print("ROM não encontrada pelo ID informado.")
+                    return 1
+        else:
+            print("Informe um índice, --romid ou --slug.")
+            return 1
 
         # Realiza download usando DownloadManager
         try:
@@ -291,7 +365,7 @@ class CLIInterface:
             result = asyncio.run(
                 self.download_manager.download_rom(
                     rom,
-                    download_boxart=True,
+                    download_boxart=(not no_boxart),
                     progress_callback=self._download_progress_callback
                 )
             )
@@ -320,6 +394,126 @@ class CLIInterface:
             return 0
         except Exception as e:
             logger.error(f"Erro no download: {e}")
+            return 1
+
+    def _cmd_boxart(self, args):
+        target = getattr(args, 'target', None)
+        romid = getattr(args, 'romid', None)
+        slug = getattr(args, 'slug', None)
+        # platform/region/force/silence aceitos, porém não utilizados diretamente aqui
+        _platforms = getattr(args, 'platform', None)
+        _regions = getattr(args, 'region', None)
+        _force = getattr(args, 'force', False)
+        _silence = getattr(args, 'silence', False)
+
+        # Resolve ROM
+        rom = None
+        if romid or slug:
+            rom_key = romid or slug
+            import asyncio
+            rom = asyncio.run(self.search_engine.get_rom_info(rom_key))
+            if not rom:
+                print("ROM não encontrada pelo identificador informado.")
+                return 1
+        elif target:
+            if target.isdigit():
+                idx = int(target) - 1
+                if 0 <= idx < len(self.cached_results):
+                    rom = self.cached_results[idx].rom_entry
+                else:
+                    print("Índice fora do intervalo. Execute uma busca primeiro e escolha um índice válido.")
+                    return 1
+            else:
+                import asyncio
+                rom = asyncio.run(self.search_engine.get_rom_info(target))
+                if not rom:
+                    print("ROM não encontrada pelo ID informado.")
+                    return 1
+        else:
+            print("Informe um índice, --romid ou --slug.")
+            return 1
+
+        if not getattr(rom, 'boxart_url', None):
+            print("Boxart não disponível para esta ROM.")
+            return 1
+
+        try:
+            # Se disponível, usa o método específico do DownloadManager
+            if hasattr(self.download_manager, 'download_boxart'):
+                import asyncio
+                saved_path = asyncio.run(
+                    self.download_manager.download_boxart(
+                        rom,
+                        progress_callback=self._download_progress_callback
+                    )
+                )
+                if not saved_path:
+                    print("Falha ao baixar a boxart.")
+                    return 1
+                print(f"Boxart salva em: {saved_path}")
+                return 0
+            else:
+                print("Operação não suportada nesta versão do gerenciador de download.")
+                return 1
+        except Exception as e:
+            logger.error(f"Erro no download da boxart: {e}")
+            return 1
+
+    def _cmd_random(self, args):
+        count = max(1, int(getattr(args, 'count', 1) or 1))
+        search_filter = SearchFilter(
+            platforms=getattr(args, 'platform', None) or None,
+            regions=getattr(args, 'region', None) or None,
+        )
+        try:
+            roms = None
+            if hasattr(self.search_engine, 'get_random_roms_sync'):
+                roms = self.search_engine.get_random_roms_sync(count=count, search_filter=search_filter)
+            else:
+                import asyncio
+                if hasattr(self.search_engine, 'get_random_roms'):
+                    roms = asyncio.run(self.search_engine.get_random_roms(count=count, search_filter=search_filter))
+            if not roms:
+                print("Nenhuma ROM encontrada.")
+                return 1
+            for i, r in enumerate(roms, start=1):
+                regions_str = ",".join(r.regions or [])
+                print(f"{i}. {r.title} | {r.platform} | {regions_str} | {r.slug}")
+            return 0
+        except Exception as e:
+            logger.error(f"Erro ao obter ROMs aleatórias: {e}")
+            return 1
+
+    def _cmd_platforms(self, args):
+        try:
+            items = None
+            if hasattr(self.search_engine, 'get_platforms_sync'):
+                items = self.search_engine.get_platforms_sync() or []
+            else:
+                import asyncio
+                if hasattr(self.search_engine, 'get_platforms'):
+                    items = asyncio.run(self.search_engine.get_platforms()) or []
+            for p in (items or []):
+                print(p)
+            return 0
+        except Exception as e:
+            logger.error(f"Erro ao listar plataformas: {e}")
+            return 1
+
+    def _cmd_regions(self, args):
+        try:
+            items = None
+            if hasattr(self.search_engine, 'get_regions_sync'):
+                items = self.search_engine.get_regions_sync() or []
+            else:
+                import asyncio
+                if hasattr(self.search_engine, 'get_regions'):
+                    items = asyncio.run(self.search_engine.get_regions()) or []
+            for r in (items or []):
+                print(r)
+            return 0
+        except Exception as e:
+            logger.error(f"Erro ao listar regiões: {e}")
             return 1
 
     def _cmd_config(self, args):
@@ -434,61 +628,76 @@ class CLIInterface:
         total_pages = max(1, (total + per_page - 1) // per_page)
         print(f"Resultados {start_num}-{end_num} de {total} (Página {page} de {total_pages})")
 
-        # Larguras das colunas
-        w_idx = 2
+        # Larguras de colunas
         w_title = 38
-        w_id = 14
-        w_platform = 12
-        w_regions = 15
+        w_id = 10
+        w_platform = 9
+        w_regions = 4
         w_hosts = 12
-        w_format = 8
-        w_size = 10
+        w_format = 7
+        w_size = 9
         w_score = 6
 
+        # Cabeçalho da tabela
         header = (
-            f"#".rjust(w_idx) + " "
-            f"Título".ljust(w_title) + " "
-            f"ID".ljust(w_id) + " "
-            f"Plataforma".ljust(w_platform) + " "
-            f"Regiões".ljust(w_regions) + " "
-            f"Hosts".ljust(w_hosts) + " "
-            f"Formato".ljust(w_format) + " "
-            f"Tamanho".ljust(w_size) + " "
-            f"Score".rjust(w_score)
+            "#".rjust(w_idx) + " " +
+            "Título".ljust(w_title) + " " +
+            "ID".ljust(w_id) + " " +
+            "Platform".ljust(w_platform) + " " +
+            "Reg.".ljust(w_regions) + " " +
+            "Hosts".ljust(w_hosts) + " " +
+            "Format".ljust(w_format) + " " +
+            "Size".rjust(w_size) + " " +
+            "Score"
         )
         sep = (
-            "-" * w_idx + " "
-            + "-" * w_title + " "
-            + "-" * w_id + " "
-            + "-" * w_platform + " "
-            + "-" * w_regions + " "
-            + "-" * w_hosts + " "
-            + "-" * w_format + " "
-            + "-" * w_size + " "
-            + "-" * w_score
+            "-" * w_idx + " " +
+            "-" * w_title + " " +
+            "-" * w_id + " " +
+            "-" * w_platform + " " +
+            "-" * w_regions + " " +
+            "-" * w_hosts + " " +
+            "-" * w_format + " " +
+            "-" * w_size + " " +
+            "-" * 5
         )
         print(header)
         print(sep)
 
+        # Linhas
         for i, s in enumerate(items):
             idx = start_num + i
             rom = s.rom_entry
-            title = (rom.title or "")[:w_title].ljust(w_title)
-            slug = (rom.slug or "")[:w_id].ljust(w_id)
-            platform = (rom.platform or "")[:w_platform].ljust(w_platform)
-            regions = ",".join(rom.regions or [])
+
+            title = (getattr(rom, 'title', '') or '')
+            title = (title[:w_title-1] + '…') if len(title) > w_title else title
+            title = title.ljust(w_title)
+
+            romid = (getattr(rom, 'rom_id', None) or getattr(rom, 'slug', '') or '')
+            romid = romid[:w_id].ljust(w_id)
+
+            platform = (getattr(rom, 'platform', '') or '')[:w_platform].ljust(w_platform)
+
+            regions = ",".join(getattr(rom, 'regions', None) or [])
             regions = regions[:w_regions].ljust(w_regions)
+
             hosts_val = getattr(rom, 'hosts', None) or ""
             hosts_val = str(hosts_val)[:w_hosts].ljust(w_hosts)
+
             fmt_val = getattr(rom, 'file_format', None) or ""
             fmt_val = str(fmt_val)[:w_format].ljust(w_format)
+
             size_val = getattr(rom, 'size', None)
             size_str = format_file_size(size_val) if isinstance(size_val, int) and size_val >= 0 else ""
-            size_str = size_str[:w_size].ljust(w_size)
+            size_str = size_str[:w_size].rjust(w_size)
+
             score_str = f"{s.total_score:>{w_score}.3f}"
-            print(f"{str(idx).rjust(w_idx)} {title} {slug} {platform} {regions} {hosts_val} {fmt_val} {size_str} {score_str}")
+
+            print(f"{str(idx).rjust(w_idx)} {title} {romid} {platform} {regions} {hosts_val} {fmt_val} {size_str} {score_str}")
+
         if end_num >= total:
-            print("-- Fim dos resultados --")
+            # Não imprimir mensagem de fim no CLI para evitar saídas interativas
+            # Removido: print("-- Fim dos resultados --")
 
     def _display_rom_info(self, rom, format_type: str = "table"):
         if format_type == "json":
